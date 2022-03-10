@@ -3,6 +3,10 @@ name = "rsx"
 version = "0.1.0"
 edition = "2021"
 
+[lib]
+name = "rsx"
+path = "src/lib.rs"
+
 [features]
 default = ["bytes", "chrono", "derive", "unsafe"]
 full = ["bytes", "chrono", "collections", "derive", 
