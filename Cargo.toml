@@ -1,0 +1,71 @@
+[package]
+name = "rsx"
+version = "0.1.0"
+edition = "2021"
+
+[features]
+default = ["bytes", "chrono", "derive", "unsafe"]
+full = ["bytes", "chrono", "collections", "derive", 
+        "fs", "hex", "log", "net", "regex", "rustls",
+        "serde", "sync", "tokio", "unsafe"]
+none = []
+
+bytes = ["bytes_", "bytestring"]
+collections = ["ahash", "ritelinked"]
+derive = ["derive_more", "smart_default", "strum"]
+fs = ["tempfile"]
+hex = ["hex_", "hex_literal"]
+log = ["log_", "env_logger", "dotenv"]
+net = ["ipnetwork"]
+rustls = ["rustls_", "rustls_pemfile"]
+serde = ["serde_", "serde_json", "serde_repr"]
+sync = ["arc_swap", "crossbeam", "flume"]
+tokio = ["futures", "pin_project", "tokio_", "tokio_stream"]
+unsafe = ["once_cell", "memoffset", "zerocopy"]
+
+[dependencies]
+ahash = { version = "0.7.6", optional = true }
+ritelinked = { version = "0.3.2", optional = true }
+
+bytes_ = { version = "1.1.0", package = "bytes", optional = true }
+bytestring = { version = "1.0.0", features = ["serde"], optional = true }
+
+chrono = { version = "0.4.19", optional = true }
+
+derive_more = { version = "0.99.17", optional = true }
+smart_default = { version = "0.6.0", package = "smart-default", optional = true }
+strum = { version = "0.24.0", features = ["derive"], optional = true }
+
+dotenv = { version = "0.15.0", optional = true }
+env_logger = { version = "0.9.0", optional = true }
+log_ = { version = "0.4.14", package = "log", optional = true }
+
+futures = { version = "0.3.21", optional = true }
+pin_project = { version = "1.0.10", package = "pin-project", optional = true }
+tokio_ = { version = "1.17.0", package = "tokio", features = ["full"], optional = true }
+tokio_stream = { version = "0.1.8", package = "tokio-stream", features = ["sync"], optional = true }
+
+hex_ = { version = "0.4.3", package = "hex", optional = true }
+hex_literal = { version = "0.3.4", package = "hex-literal", optional = true }
+
+ipnetwork = { version = "0.18.0", optional = true }
+
+memoffset = { version = "0.6.5", optional = true }
+zerocopy = { version = "0.6.1", optional = true }
+
+once_cell = { version = "1.10.0", optional = true }
+
+regex = { version = "1.5.5", optional = true }
+
+serde_ = { package = "serde", version = "1.0.136", features = ["derive"], optional = true }
+serde_json = { version = "1.0.79", optional = true }
+serde_repr = { version = "0.1.7", optional = true }
+
+tempfile = { version = "3.3.0", optional = true }
+
+rustls_ = { version = "0.20.4", package = "rustls", optional = true }
+rustls_pemfile = { version = "0.3.0", package = "rustls-pemfile", optional = true }
+
+arc_swap = { version = "1.5.0", package = "arc-swap", optional = true }
+crossbeam = { version = "0.8.1", optional = true }
+flume = { version = "0.10.11", optional = true }
