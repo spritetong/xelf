@@ -72,4 +72,4 @@ rustls_pemfile = { version = "0.3.0", package = "rustls-pemfile", optional = tru
 
 arc_swap = { version = "1.5.0", package = "arc-swap", optional = true }
 crossbeam = { version = "0.8.1", optional = true }
-flume = { version = "0.10.11", optional = true }
+flume = { version = "0.10.12", optional = true }

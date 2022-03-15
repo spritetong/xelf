@@ -110,7 +110,7 @@ pub mod prelude {
     };
     #[cfg(feature = "sync")]
     pub use std::{
-        sync::{atomic::*, Arc, Mutex as StdMutex, RwLock as StdRwLock},
+        sync::{self, atomic::*, Arc, Mutex as StdMutex, RwLock as StdRwLock},
         thread,
     };
 
