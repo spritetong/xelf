@@ -1,6 +1,6 @@
 use crate::num::*;
-use ::serde_::{de::DeserializeOwned, ser::Serialize};
-use ::serde_json::{json, map::Map, value::Index, Value};
+use serde::{de::DeserializeOwned, ser::Serialize};
+use serde_json::{json, map::Map, value::Index, Value};
 
 ////////////////////////////////////////////////////////////////////////////////
 

@@ -4,12 +4,15 @@ pub mod str;
 #[cfg(feature = "collections")]
 pub mod collections;
 
-#[cfg(feature = "serde")]
+#[cfg(feature = "serde_rsx")]
 pub mod json;
-#[cfg(feature = "serde")]
+#[cfg(feature = "serde_rsx")]
 pub mod num;
-#[cfg(feature = "serde")]
+#[cfg(feature = "serde_rsx")]
 pub mod serde;
+
+#[cfg(feature = "async")]
+pub mod signal;
 
 pub mod prelude {
     pub use crate::str::*;
@@ -18,9 +21,9 @@ pub mod prelude {
         some_or_continue, some_or_return, uninit_assume_init, zeroed_init, If,
     };
 
-    #[cfg(feature = "bytes")]
-    pub use ::bytes_::{self as bytes, Buf, BufMut, Bytes, BytesMut};
-    #[cfg(feature = "bytes")]
+    #[cfg(feature = "bytes_rsx")]
+    pub use ::bytes::{self, Buf, BufMut, Bytes, BytesMut};
+    #[cfg(feature = "bytes_rsx")]
     pub use ::bytestring::{self, ByteString};
 
     #[cfg(feature = "chrono")]
@@ -53,9 +56,9 @@ pub mod prelude {
     #[cfg(feature = "fs")]
     pub use ::tempfile::{self, NamedTempFile, TempDir, TempPath};
 
-    #[cfg(feature = "hex")]
-    pub use ::hex_::{self as hex, FromHex, ToHex};
-    #[cfg(feature = "hex")]
+    #[cfg(feature = "hex_rsx")]
+    pub use ::hex::{self, FromHex, ToHex};
+    #[cfg(feature = "hex_rsx")]
     pub use ::hex_literal::{self, hex};
 
     #[cfg(feature = "once_cell")]
@@ -64,12 +67,12 @@ pub mod prelude {
         sync::{Lazy, OnceCell},
     };
 
-    #[cfg(feature = "log")]
+    #[cfg(feature = "log_rsx")]
     pub use dotenv;
-    #[cfg(feature = "log")]
+    #[cfg(feature = "log_rsx")]
     pub use env_logger;
-    #[cfg(feature = "log")]
-    pub use log_::{self as log, debug, error, info, trace};
+    #[cfg(feature = "log_rsx")]
+    pub use log::{self, debug, error, info, trace};
 
     #[cfg(feature = "net")]
     pub use ::ipnetwork::{self, IpNetwork, Ipv4Network, Ipv6Network};
@@ -78,26 +81,26 @@ pub mod prelude {
         self, IpAddr, Ipv4Addr, Ipv6Addr, SocketAddr, SocketAddrV4, SocketAddrV6, ToSocketAddrs,
     };
 
-    #[cfg(feature = "rustls")]
-    pub use rustls_ as rustls;
-    #[cfg(feature = "rustls")]
+    #[cfg(feature = "tls")]
+    pub use rustls;
+    #[cfg(feature = "tls")]
     pub use rustls_pemfile;
 
-    #[cfg(feature = "serde")]
+    #[cfg(feature = "serde_rsx")]
     pub use crate::json::*;
-    #[cfg(feature = "serde")]
+    #[cfg(feature = "serde_rsx")]
     pub use crate::num::{Float as _, Num as _};
-    #[cfg(feature = "serde")]
+    #[cfg(feature = "serde_rsx")]
     pub use crate::serde::*;
-    #[cfg(feature = "serde")]
-    pub use ::serde_::{
-        self as serde,
+    #[cfg(feature = "serde_rsx")]
+    pub use ::serde::{
+        self,
         de::{DeserializeOwned, Deserializer},
         Deserialize, Serialize,
     };
-    #[cfg(feature = "serde")]
+    #[cfg(feature = "serde_rsx")]
     pub use ::serde_json::{self, json, Map as JsonMap, Number, Value};
-    #[cfg(feature = "serde")]
+    #[cfg(feature = "serde_rsx")]
     pub use ::serde_repr::{self, Deserialize_repr, Serialize_repr};
 
     #[cfg(feature = "sync")]
@@ -114,23 +117,25 @@ pub mod prelude {
         thread,
     };
 
-    #[cfg(feature = "tokio")]
+    #[cfg(feature = "async")]
     pub use ::futures::{
         self,
-        future::{join_all, try_join_all, FutureExt},
-        StreamExt, TryStreamExt,
+        future::{join_all, try_join_all, Future, TryFuture},
     };
-    #[cfg(feature = "tokio")]
+    #[cfg(feature = "async")]
+    pub use ::pin_project::{self, pin_project};
+    #[cfg(feature = "async")]
     pub use ::std::pin::Pin;
-    #[cfg(feature = "tokio")]
-    pub use ::tokio_::{
-        self as tokio,
+    #[cfg(feature = "async")]
+    pub use ::tokio::{
+        self,
         sync::{broadcast, mpsc, Mutex, RwLock},
     };
     #[cfg(feature = "tokio")]
     pub use ::tokio_stream::{
         self,
         wrappers::{errors::BroadcastStreamRecvError, BroadcastStream, ReceiverStream},
+        StreamExt as _,
     };
 
     #[cfg(feature = "unsafe")]

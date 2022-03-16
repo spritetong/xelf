@@ -8,30 +8,30 @@ name = "rsx"
 path = "src/lib.rs"
 
 [features]
-default = ["bytes", "chrono", "derive", "unsafe"]
-full = ["bytes", "chrono", "collections", "derive", 
-        "fs", "hex", "log", "net", "regex", "rustls",
-        "serde", "sync", "tokio", "unsafe"]
+default = ["bytes_rsx", "chrono", "derive", "unsafe"]
+full = ["bytes_rsx", "chrono", "collections", "derive", 
+        "fs", "hex_rsx", "log_rsx", "net", "regex", "tls",
+        "serde_rsx", "sync", "async", "unsafe"]
 none = []
 
-bytes = ["bytes_", "bytestring"]
+bytes_rsx = ["bytes", "bytestring"]
 collections = ["ahash", "ritelinked"]
 derive = ["derive_more", "smart_default", "strum"]
 fs = ["tempfile"]
-hex = ["hex_", "hex_literal"]
-log = ["log_", "env_logger", "dotenv"]
+hex_rsx = ["hex", "hex_literal"]
+log_rsx = ["log", "env_logger", "dotenv"]
 net = ["ipnetwork"]
-rustls = ["rustls_", "rustls_pemfile"]
-serde = ["serde_", "serde_json", "serde_repr"]
+tls = ["rustls", "rustls_pemfile"]
+serde_rsx = ["serde", "serde_json", "serde_repr"]
 sync = ["arc_swap", "crossbeam", "flume"]
-tokio = ["futures", "pin_project", "tokio_", "tokio_stream"]
+async = ["futures", "pin_project", "tokio", "tokio_stream"]
 unsafe = ["once_cell", "memoffset", "zerocopy"]
 
 [dependencies]
 ahash = { version = "0.7.6", optional = true }
 ritelinked = { version = "0.3.2", optional = true }
 
-bytes_ = { version = "1.1.0", package = "bytes", optional = true }
+bytes = { version = "1.1.0", optional = true }
 bytestring = { version = "1.0.0", features = ["serde"], optional = true }
 
 chrono = { version = "0.4.19", optional = true }
@@ -42,14 +42,15 @@ strum = { version = "0.24.0", features = ["derive"], optional = true }
 
 dotenv = { version = "0.15.0", optional = true }
 env_logger = { version = "0.9.0", optional = true }
-log_ = { version = "0.4.14", package = "log", optional = true }
+log = { version = "0.4.14", optional = true }
 
 futures = { version = "0.3.21", optional = true }
 pin_project = { version = "1.0.10", package = "pin-project", optional = true }
-tokio_ = { version = "1.17.0", package = "tokio", features = ["full"], optional = true }
-tokio_stream = { version = "0.1.8", package = "tokio-stream", features = ["sync"], optional = true }
+tokio = { version = "1.17.0", features = ["full"], optional = true }
+tokio_stream = { version = "0.1.8", package = "tokio-stream", features = [
+    "time", "sync", "signal", "net", "fs", "io-util"], optional = true }
 
-hex_ = { version = "0.4.3", package = "hex", optional = true }
+hex = { version = "0.4.3", optional = true }
 hex_literal = { version = "0.3.4", package = "hex-literal", optional = true }
 
 ipnetwork = { version = "0.18.0", optional = true }
@@ -61,13 +62,13 @@ once_cell = { version = "1.10.0", optional = true }
 
 regex = { version = "1.5.5", optional = true }
 
-serde_ = { package = "serde", version = "1.0.136", features = ["derive"], optional = true }
+serde = { version = "1.0.136", features = ["derive"], optional = true }
 serde_json = { version = "1.0.79", optional = true }
 serde_repr = { version = "0.1.7", optional = true }
 
 tempfile = { version = "3.3.0", optional = true }
 
-rustls_ = { version = "0.20.4", package = "rustls", optional = true }
+rustls = { version = "0.20.4", optional = true }
 rustls_pemfile = { version = "0.3.0", package = "rustls-pemfile", optional = true }
 
 arc_swap = { version = "1.5.0", package = "arc-swap", optional = true }

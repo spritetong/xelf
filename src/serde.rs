@@ -1,6 +1,6 @@
 use crate::num::{Float, Num};
-use ::serde_::{de, ser};
-use ::std::{fmt, marker::PhantomData, str::FromStr};
+use serde::{de, ser};
+use std::{fmt, marker::PhantomData, str::FromStr};
 
 #[derive(Default)]
 struct DeNumVisitor<T: Num> {
