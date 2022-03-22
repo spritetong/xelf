@@ -1,51 +1,29 @@
-pub mod ptr;
-pub mod str;
-
-#[cfg(feature = "collections")]
-pub mod collections;
-
-#[cfg(feature = "serde_rsx")]
+#[cfg(feature = "json")]
 pub mod json;
-#[cfg(feature = "serde_rsx")]
+#[cfg(feature = "num")]
 pub mod num;
-#[cfg(feature = "serde_rsx")]
+#[cfg(feature = "ptr")]
+pub mod ptr;
+#[cfg(feature = "serde")]
 pub mod serde;
-
-#[cfg(feature = "async")]
+#[cfg(feature = "signal")]
 pub mod signal;
+#[cfg(feature = "str")]
+pub mod str;
+#[cfg(feature = "vec")]
+pub mod vec;
 
 pub mod prelude {
-    pub use crate::str::*;
     pub use crate::{
         cstr, ok_or, ok_or_break, ok_or_continue, ok_or_return, some_or, some_or_break,
         some_or_continue, some_or_return, uninit_assume_init, zeroed_init, If,
     };
 
-    #[cfg(feature = "bytes_rsx")]
-    pub use ::bytes::{self, Buf, BufMut, Bytes, BytesMut};
-    #[cfg(feature = "bytes_rsx")]
-    pub use ::bytestring::{self, ByteString};
+    #[cfg(feature = "async")]
+    pub use ::std::pin::Pin;
 
-    #[cfg(feature = "chrono")]
-    pub use ::chrono::{self, prelude::*, Duration as ChronoDuration};
     #[cfg(feature = "chrono")]
     pub use ::std::time::{self, Duration, Instant, SystemTime, UNIX_EPOCH};
-
-    #[cfg(feature = "derive")]
-    pub use ::derive_more::{self, Deref, DerefMut};
-    #[cfg(feature = "derive")]
-    pub use ::smart_default::{self, SmartDefault};
-    #[cfg(feature = "strum")]
-    pub use ::strum::{self, EnumIter, EnumMessage, IntoEnumIterator, IntoStaticStr};
-
-    #[cfg(feature = "collections")]
-    pub use crate::collections::*;
-    #[cfg(feature = "collections")]
-    pub use ::ahash::{self, AHashMap, AHashSet};
-    #[cfg(feature = "collections")]
-    pub use ::ritelinked::{self, linked_hash_map, linked_hash_set, LinkedHashMap, LinkedHashSet};
-    #[cfg(feature = "collections")]
-    pub use ::std::collections::{self, BTreeMap, BTreeSet, HashMap, HashSet, VecDeque};
 
     #[cfg(feature = "fs")]
     pub use ::std::{
@@ -53,99 +31,43 @@ pub mod prelude {
         io::{self, prelude::*},
         path::{self, Path, PathBuf},
     };
-    #[cfg(feature = "fs")]
-    pub use ::tempfile::{self, NamedTempFile, TempDir, TempPath};
 
-    #[cfg(feature = "hex_rsx")]
-    pub use ::hex::{self, FromHex, ToHex};
-    #[cfg(feature = "hex_rsx")]
-    pub use ::hex_literal::{self, hex};
+    #[cfg(feature = "collections")]
+    pub use ::std::collections::{self, BTreeMap, BTreeSet, HashMap, HashSet, VecDeque};
 
-    #[cfg(feature = "once_cell")]
-    pub use once_cell::{
-        self,
-        sync::{Lazy, OnceCell},
-    };
+    #[cfg(feature = "json")]
+    pub use crate::json::*;
 
-    #[cfg(feature = "log_rsx")]
-    pub use dotenv;
-    #[cfg(feature = "log_rsx")]
-    pub use env_logger;
-    #[cfg(feature = "log_rsx")]
+    #[cfg(feature = "log")]
     pub use log::{self, debug, error, info, trace};
 
-    #[cfg(feature = "net")]
-    pub use ::ipnetwork::{self, IpNetwork, Ipv4Network, Ipv6Network};
     #[cfg(feature = "net")]
     pub use ::std::net::{
         self, IpAddr, Ipv4Addr, Ipv6Addr, SocketAddr, SocketAddrV4, SocketAddrV6, ToSocketAddrs,
     };
 
-    #[cfg(feature = "tls")]
-    pub use rustls;
-    #[cfg(feature = "tls")]
-    pub use rustls_pemfile;
-
-    #[cfg(feature = "serde_rsx")]
-    pub use crate::json::*;
-    #[cfg(feature = "serde_rsx")]
+    #[cfg(feature = "num")]
     pub use crate::num::{Float as _, Num as _};
-    #[cfg(feature = "serde_rsx")]
-    pub use crate::serde::*;
-    #[cfg(feature = "serde_rsx")]
-    pub use ::serde::{
-        self,
-        de::{DeserializeOwned, Deserializer},
-        Deserialize, Serialize,
-    };
-    #[cfg(feature = "serde_rsx")]
-    pub use ::serde_json::{self, json, Map as JsonMap, Number, Value};
-    #[cfg(feature = "serde_rsx")]
-    pub use ::serde_repr::{self, Deserialize_repr, Serialize_repr};
 
-    #[cfg(feature = "sync")]
-    pub use arc_swap::{self, ArcSwap, ArcSwapAny};
-    #[cfg(feature = "sync")]
-    pub use crossbeam::{
-        self,
-        atomic::AtomicCell,
-        sync::{Parker, ShardedLock},
-    };
+    #[cfg(feature = "serde")]
+    pub use crate::serde::*;
+
+    #[cfg(feature = "str")]
+    pub use crate::str::*;
+
     #[cfg(feature = "sync")]
     pub use std::{
         sync::{self, atomic::*, Arc, Mutex as StdMutex, RwLock as StdRwLock},
         thread,
     };
 
-    #[cfg(feature = "async")]
-    pub use ::futures::{
-        self,
-        future::{join_all, try_join_all, Future, TryFuture},
-    };
-    #[cfg(feature = "async")]
-    pub use ::pin_project::{self, pin_project};
-    #[cfg(feature = "async")]
-    pub use ::std::pin::Pin;
-    #[cfg(feature = "async")]
-    pub use ::tokio::{
-        self,
-        sync::{broadcast, mpsc, Mutex, RwLock},
-    };
-    #[cfg(feature = "tokio")]
-    pub use ::tokio_stream::{
-        self,
-        wrappers::{errors::BroadcastStreamRecvError, BroadcastStream, ReceiverStream},
-        StreamExt as _,
-    };
-
-    #[cfg(feature = "unsafe")]
+    #[cfg(feature = "ptr")]
     pub use crate::ptr::*;
-    #[cfg(feature = "unsafe")]
-    pub use ::memoffset::{self, offset_of};
-    #[cfg(feature = "unsafe")]
+    #[cfg(feature = "ptr")]
     pub use ::std::{mem, ptr};
-    #[cfg(feature = "unsafe")]
-    pub use ::zerocopy::{self, AsBytes};
+
+    #[cfg(feature = "vec")]
+    pub use crate::vec::*;
 
     pub use ::std::{
         borrow::{self, Borrow, BorrowMut, Cow},
@@ -155,11 +77,130 @@ pub mod prelude {
         env,
         fmt::{self, Display},
         iter,
-        ops::{self, * /*, Deref, DerefMut */},
+        ops::{self, *},
         rc::Rc,
         slice,
         str::{self, FromStr},
     };
+
+    ////////////////////////////////////////////////////////////////////////////
+
+    #[cfg(feature = "ahash")]
+    pub use ::ahash::{self, AHashMap, AHashSet};
+
+    #[cfg(feature = "arc_swap")]
+    pub use arc_swap::{self, ArcSwap, ArcSwapAny};
+
+    #[cfg(feature = "async_trait")]
+    pub use ::async_trait::{self, async_trait};
+
+    #[cfg(feature = "base64")]
+    pub use ::base64;
+
+    #[cfg(feature = "bytes")]
+    pub use ::bytes::{self, Buf, BufMut, Bytes, BytesMut};
+    #[cfg(feature = "bytestring")]
+    pub use ::bytestring::{self, ByteString};
+
+    #[cfg(feature = "chrono")]
+    pub use ::chrono::{self, prelude::*, Duration as ChronoDuration};
+
+    #[cfg(feature = "crossbeam")]
+    pub use crossbeam::{
+        self,
+        atomic::AtomicCell,
+        sync::{Parker, ShardedLock},
+    };
+
+    #[cfg(feature = "derive_more")]
+    pub use ::derive_more::{self, Deref, DerefMut};
+
+    #[cfg(feature = "dotenv")]
+    pub use dotenv;
+
+    #[cfg(feature = "env_logger")]
+    pub use env_logger;
+
+    #[cfg(feature = "futures")]
+    pub use ::futures::{
+        self,
+        future::{join_all, try_join_all, Future, TryFuture},
+    };
+    #[cfg(feature = "futures_util")]
+    pub use ::futures_util;
+
+    #[cfg(feature = "hex")]
+    pub use ::hex::{self, FromHex, ToHex};
+    #[cfg(feature = "hex_literal")]
+    pub use ::hex_literal::{self, hex};
+
+    #[cfg(feature = "ipnetwork")]
+    pub use ::ipnetwork::{self, IpNetwork, Ipv4Network, Ipv6Network};
+
+    #[cfg(feature = "num_traits")]
+    pub use ::num_traits::{self, FromPrimitive};
+
+    #[cfg(feature = "memoffset")]
+    pub use ::memoffset::{self, offset_of};
+
+    #[cfg(feature = "num_enum")]
+    pub use ::num_enum::{self, TryFromPrimitive};
+
+    #[cfg(feature = "once_cell")]
+    pub use once_cell::{
+        self,
+        sync::{Lazy, OnceCell},
+    };
+
+    #[cfg(feature = "pin_project")]
+    pub use ::pin_project::{self, pin_project};
+
+    #[cfg(feature = "ritelinked")]
+    pub use ::ritelinked::{self, linked_hash_map, linked_hash_set, LinkedHashMap, LinkedHashSet};
+
+    #[cfg(feature = "rustls")]
+    pub use ::rustls;
+    #[cfg(feature = "rustls_pemfile")]
+    pub use ::rustls_pemfile;
+
+    #[cfg(feature = "sea_orm")]
+    pub use ::sea_orm::{self, strum::IntoEnumIterator as _, Value as DbValue, Values as DbValues};
+
+    #[cfg(feature = "smart_default")]
+    pub use ::smart_default::{self, SmartDefault};
+    #[cfg(feature = "strum")]
+    pub use ::strum::{self, EnumIter, EnumMessage, IntoEnumIterator, IntoStaticStr};
+
+    #[cfg(feature = "serde")]
+    pub use ::serde::{
+        self,
+        de::{DeserializeOwned, Deserializer},
+        Deserialize, Serialize,
+    };
+    #[cfg(feature = "serde_json")]
+    pub use ::serde_json::{
+        self, json, Map as JsonMap, Number, Number as JsonNumber, Value, Value as Json,
+    };
+    #[cfg(feature = "serde_repr")]
+    pub use ::serde_repr::{self, Deserialize_repr, Serialize_repr};
+
+    #[cfg(feature = "tempfile")]
+    pub use ::tempfile::{self, NamedTempFile, TempDir, TempPath};
+
+    #[cfg(feature = "tokio")]
+    pub use ::tokio::{
+        self,
+        sync::{broadcast, mpsc, Mutex, RwLock},
+    };
+    #[cfg(feature = "tokio_stream")]
+    pub use ::tokio_stream::{
+        self,
+        wrappers::{errors::BroadcastStreamRecvError, BroadcastStream, ReceiverStream},
+        StreamExt as _,
+    };
+
+    #[cfg(feature = "zerocopy")]
+    pub use ::zerocopy::{self, AsBytes};
 }
 
 /// Create an object and fill its memory with zero.
