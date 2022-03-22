@@ -10,7 +10,7 @@ path = "src/lib.rs"
 [features]
 default = ["chrono", "collections", "derive", "vec", "with_static"]
 common = ["async", "chrono", "collections", "derive", 
-          "fs", "net", "regex", "str", "sync", "vec",
+          "fs", "net", "ptr", "regex", "str", "sync", "vec",
           "with_bytes", "with_hex", "with_log", "with_hashmap", "with_rustls", "with_serde", "with_static"]
 none = []
 
