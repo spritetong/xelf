@@ -209,14 +209,14 @@ macro_rules! zeroed_init {
     () => (
         unsafe {
             #[allow(invalid_value)]
-            std::mem::MaybeUninit::zeroed().assume_init()
+            ::std::mem::MaybeUninit::zeroed().assume_init()
         }
     );
 
     ($x:ident $(,$field:ident: $value:expr)* $(,)?) => (
         unsafe {
             #[allow(invalid_value)]
-            $x = std::mem::MaybeUninit::zeroed().assume_init();
+            $x = ::std::mem::MaybeUninit::zeroed().assume_init();
             $(std::ptr::write(&mut $x.$field, $value);)*
         }
     );
@@ -229,7 +229,7 @@ macro_rules! uninit_assume_init {
     ($(,)?) => {
         unsafe {
             #[allow(invalid_value)]
-            std::mem::MaybeUninit::uninit().assume_init()
+            ::std::mem::MaybeUninit::uninit().assume_init()
         }
     };
 }
@@ -249,7 +249,7 @@ macro_rules! uninit_assume_init {
 #[macro_export]
 macro_rules! cstr {
     ($s:literal) => {
-        unsafe { std::mem::transmute::<_, &std::ffi::CStr>(concat!($s, "\0")) }
+        unsafe { ::std::mem::transmute::<_, &std::ffi::CStr>(concat!($s, "\0")) }
     };
 }
 
