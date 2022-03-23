@@ -1,3 +1,7 @@
+#[cfg(feature = "collections")]
+pub mod collections;
+#[cfg(feature = "db")]
+pub mod db;
 #[cfg(feature = "json")]
 pub mod json;
 #[cfg(feature = "num")]
@@ -32,6 +36,8 @@ pub mod prelude {
         path::{self, Path, PathBuf},
     };
 
+    #[cfg(feature = "collections")]
+    pub use crate::collections::*;
     #[cfg(feature = "collections")]
     pub use ::std::collections::{self, BTreeMap, BTreeSet, HashMap, HashSet, VecDeque};
 
@@ -87,6 +93,8 @@ pub mod prelude {
 
     #[cfg(feature = "ahash")]
     pub use ::ahash::{self, AHashMap, AHashSet};
+    #[cfg(any(feature = "ahash", feature = "collections"))]
+    pub use ::std::hash::{Hash, BuildHasher};
 
     #[cfg(feature = "arc_swap")]
     pub use arc_swap::{self, ArcSwap, ArcSwapAny};
@@ -137,14 +145,17 @@ pub mod prelude {
     #[cfg(feature = "ipnetwork")]
     pub use ::ipnetwork::{self, IpNetwork, Ipv4Network, Ipv6Network};
 
-    #[cfg(feature = "num_traits")]
-    pub use ::num_traits::{self, FromPrimitive};
-
     #[cfg(feature = "memoffset")]
     pub use ::memoffset::{self, offset_of};
 
+    #[cfg(feature = "maplit")]
+    pub use ::maplit::{self, hashmap, hashset, btreemap, btreeset};
+
     #[cfg(feature = "num_enum")]
     pub use ::num_enum::{self, TryFromPrimitive};
+
+    #[cfg(feature = "num_traits")]
+    pub use ::num_traits::{self, FromPrimitive as _};
 
     #[cfg(feature = "once_cell")]
     pub use once_cell::{
@@ -164,12 +175,16 @@ pub mod prelude {
     pub use ::rustls_pemfile;
 
     #[cfg(feature = "sea_orm")]
-    pub use ::sea_orm::{self, strum::IntoEnumIterator as _, Value as DbValue, Values as DbValues};
+    pub use ::sea_orm::{
+        self,
+        strum::{AsRefStr as _, EnumMessage as _, IntoEnumIterator as _},
+        Value as DbValue, Values as DbValues,
+    };
 
     #[cfg(feature = "smart_default")]
     pub use ::smart_default::{self, SmartDefault};
     #[cfg(feature = "strum")]
-    pub use ::strum::{self, EnumIter, EnumMessage, IntoEnumIterator, IntoStaticStr};
+    pub use ::strum::{self, AsRefStr, EnumIter, EnumMessage, IntoEnumIterator, IntoStaticStr};
 
     #[cfg(feature = "serde")]
     pub use ::serde::{

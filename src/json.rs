@@ -1,6 +1,8 @@
+use crate::collections::Contains;
 use crate::num::*;
-use serde::{de::DeserializeOwned, ser::Serialize};
-use serde_json::{json, map::Map, value::Index, Value};
+use ::serde::{de::DeserializeOwned, ser::Serialize};
+use ::serde_json::{json, map::Map, value::Index, Value};
+use ::std::{borrow::Borrow, hash::Hash};
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -188,11 +190,11 @@ pub trait JsonObjectRsx {
     fn take_with_prefix(&mut self, prefix: &str) -> Self;
 
     /// Merge a JSON object to a serializable object.
-    fn merge_to<T: Serialize + DeserializeOwned>(
-        &self,
-        dst: &mut T,
-        skip: &[&str],
-    ) -> serde_json::Result<()>;
+    fn merge_to<T, S, K>(&self, dst: &mut T, skip: &S) -> serde_json::Result<()>
+    where
+        T: Serialize + DeserializeOwned,
+        S: Contains<K, str>,
+        K: Hash + Ord + Eq + Borrow<str>;
 }
 
 impl JsonObjectRsx for Value {
@@ -210,11 +212,12 @@ impl JsonObjectRsx for Value {
         })
     }
 
-    fn merge_to<T: Serialize + DeserializeOwned>(
-        &self,
-        dst: &mut T,
-        skip: &[&str],
-    ) -> serde_json::Result<()> {
+    fn merge_to<T, S, K>(&self, dst: &mut T, skip: &S) -> serde_json::Result<()>
+    where
+        T: Serialize + DeserializeOwned,
+        S: Contains<K, str>,
+        K: Hash + Ord + Eq + Borrow<str>,
+    {
         if let Some(map) = self.as_object() {
             map.merge_to(dst, skip)
         } else {
@@ -240,15 +243,16 @@ impl JsonObjectRsx for Map<String, Value> {
         map
     }
 
-    fn merge_to<T: Serialize + DeserializeOwned>(
-        &self,
-        dst: &mut T,
-        skip: &[&str],
-    ) -> serde_json::Result<()> {
+    fn merge_to<T, S, K>(&self, dst: &mut T, skip: &S) -> serde_json::Result<()>
+    where
+        T: Serialize + DeserializeOwned,
+        S: Contains<K, str>,
+        K: Hash + Ord + Eq + Borrow<str>,
+    {
         let mut value = serde_json::to_value(&dst)?;
         if let Some(map) = value.as_object_mut() {
             for (k, v) in map {
-                if !skip.contains(&k.as_str()) {
+                if !skip.contains_(k.as_str()) {
                     if let Some(o) = self.get(k) {
                         *v = o.clone();
                     }
@@ -321,5 +325,16 @@ mod tests {
 
         assert_eq!(jsn.get_or("name", ""), "tom");
         assert_eq!(jsn.get_or("age", 16), 16);
+    }
+
+    #[test]
+    fn test_json_merge() {
+        let jsn1 = json!({"1": 11, "2": 22, "3": 33});
+        let mut jsn2 = json!({"1": 1, "2": 2});
+        assert!(jsn1.merge_to(&mut jsn2, &["2"]).is_ok());
+
+        assert_eq!(jsn2.get_or("1", 0i32), 11);
+        assert_eq!(jsn2.get_or("2", 0i32), 2);
+        assert_eq!(jsn2.get_or("3", 0i32), 0);
     }
 }
