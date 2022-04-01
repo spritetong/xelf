@@ -6,17 +6,24 @@ use ::std::{
     hash::{BuildHasher, Hash},
 };
 
-/// Trait for a collection which contains a value or a key.
+/// Trait for a container which contains a key.
 pub trait Contains<K, Q>
 where
     K: ?Sized + Eq + Ord + Hash + Borrow<Q>,
     Q: ?Sized + Eq + Hash + Ord,
 {
     /// Returns `true` if the container contains a value for the specified key.
-    fn contains_(&self, k: &Q) -> bool;
+    fn contains_it(&self, k: &Q) -> bool;
 }
 
 macro_rules! impl_contains {
+    (@option $self:ident, $k:ident) => {
+        match $self.as_ref() {
+            Some(v) if v.borrow() == $k => true,
+            _ => false,
+        }
+    };
+
     (@iter $self:ident, $k:ident) => {
         'outer: loop {
             for it in $self.iter() {
@@ -52,7 +59,7 @@ macro_rules! impl_contains {
                     Q: ?Sized + Eq + Hash + Ord,
                     $($preds)*
             {
-                fn contains_(&self, k: &Q) -> bool {
+                fn contains_it(&self, k: &Q) -> bool {
                     impl_contains!(@$type self, k)
                 }
             }
@@ -65,6 +72,8 @@ macro_rules! impl_contains {
             impl [$($args),*] for $T where [$($preds)*] }
     };
 }
+
+impl_contains!(@option K, [], impl<K, Q> for Option<K> where);
 
 impl_contains!(@iter [N], [K; N]);
 impl_contains!(@iter [], [K]);
@@ -93,18 +102,26 @@ mod tests {
 
     #[test]
     fn test_container() {
-        assert!(["1", "2", "3"].contains_("1"));
-        assert!(["1".to_owned(), "2".to_owned(), "3".to_owned()].contains_("1"));
-        assert!(["1".to_owned(), "2".to_owned(), "3".to_owned()].contains_(&"1".to_owned()));
-        assert!(vec!["1".to_owned(), "2".to_owned(), "3".to_owned()].contains_("1"));
+        assert!(Some("1").contains_it("1"));
+        assert!(!Some("1").contains_it("2"));
+        assert!(!None::<&str>.contains_it("2"));
 
-        assert!([1, 2, 3].contains_(&1));
-        assert!(vec![1, 2, 3].contains_(&1));
+        assert!(Some(1).contains_it(&1));
+        assert!(!Some(1).contains_it(&2));
+        assert!(!None::<i32>.contains_it(&2));
+
+        assert!(["1", "2", "3"].contains_it("1"));
+        assert!(["1".to_owned(), "2".to_owned(), "3".to_owned()].contains_it("1"));
+        assert!(["1".to_owned(), "2".to_owned(), "3".to_owned()].contains_it(&"1".to_owned()));
+        assert!(vec!["1".to_owned(), "2".to_owned(), "3".to_owned()].contains_it("1"));
+
+        assert!([1, 2, 3].contains_it(&1));
+        assert!(vec![1, 2, 3].contains_it(&1));
 
         #[cfg(feature = "serde_json")]
         {
             let a = json!({"1": 1, "2": 2, "3": 3});
-            assert!(a.as_object().unwrap().contains_("1"));
+            assert!(a.as_object().unwrap().contains_it("1"));
         }
     }
 }

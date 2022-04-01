@@ -252,7 +252,7 @@ impl JsonObjectRsx for Map<String, Value> {
         let mut value = serde_json::to_value(&dst)?;
         if let Some(map) = value.as_object_mut() {
             for (k, v) in map {
-                if !skip.contains_(k.as_str()) {
+                if !skip.contains_it(k.as_str()) {
                     if let Some(o) = self.get(k) {
                         *v = o.clone();
                     }

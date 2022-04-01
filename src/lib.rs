@@ -94,7 +94,7 @@ pub mod prelude {
     #[cfg(feature = "ahash")]
     pub use ::ahash::{self, AHashMap, AHashSet};
     #[cfg(any(feature = "ahash", feature = "collections"))]
-    pub use ::std::hash::{Hash, BuildHasher};
+    pub use ::std::hash::{BuildHasher, Hash};
 
     #[cfg(feature = "arc_swap")]
     pub use arc_swap::{self, ArcSwap, ArcSwapAny};
@@ -111,7 +111,7 @@ pub mod prelude {
     pub use ::bytestring::{self, ByteString};
 
     #[cfg(feature = "chrono")]
-    pub use ::chrono::{self, prelude::*, Duration as ChronoDuration};
+    pub use ::chrono::{self, prelude::*};
 
     #[cfg(feature = "crossbeam")]
     pub use crossbeam::{
@@ -149,13 +149,10 @@ pub mod prelude {
     pub use ::memoffset::{self, offset_of};
 
     #[cfg(feature = "maplit")]
-    pub use ::maplit::{self, hashmap, hashset, btreemap, btreeset};
+    pub use ::maplit::{self, btreemap, btreeset, hashmap, hashset};
 
     #[cfg(feature = "num_enum")]
     pub use ::num_enum::{self, TryFromPrimitive};
-
-    #[cfg(feature = "num_traits")]
-    pub use ::num_traits::{self, FromPrimitive as _};
 
     #[cfg(feature = "once_cell")]
     pub use once_cell::{
@@ -168,6 +165,9 @@ pub mod prelude {
 
     #[cfg(feature = "ritelinked")]
     pub use ::ritelinked::{self, linked_hash_map, linked_hash_set, LinkedHashMap, LinkedHashSet};
+
+    #[cfg(feature = "rust_decimal")]
+    pub use ::rust_decimal::{self, Decimal};
 
     #[cfg(feature = "rustls")]
     pub use ::rustls;
@@ -211,7 +211,7 @@ pub mod prelude {
     pub use ::tokio_stream::{
         self,
         wrappers::{errors::BroadcastStreamRecvError, BroadcastStream, ReceiverStream},
-        StreamExt as _,
+        StreamExt as TokioStreamExt,
     };
 
     #[cfg(feature = "zerocopy")]

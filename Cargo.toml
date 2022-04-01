@@ -1,6 +1,6 @@
 [package]
 name = "rsx"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2021"
 
 [lib]
@@ -10,19 +10,19 @@ path = "src/lib.rs"
 [features]
 default = ["chrono", "collections", "derive", "ptr", "vec"]
 common = ["async", "chrono", "collections", "derive", 
-          "fs", "net", "ptr", "regex", "str", "sync", "vec",
-          "with_bytes", "with_hex", "with_log", "hashmap", "with_rustls", "with_serde"]
+          "fs", "hashmap", "net", "ptr", "regex", "str", "sync", "vec",
+          "with-bytes", "with-hex", "with-log", "with-rustls", "with-serde"]
 none = []
 
-with_bytes = ["bytes", "bytestring", "zerocopy"]
-with_hex = ["hex", "hex_literal"]
-with_log = ["log", "env_logger", "dotenv"]
-with_serde = ["serde", "serde_repr", "json"]
-with_rustls = ["rustls", "rustls_pemfile"]
+with-bytes = ["bytes", "bytestring", "zerocopy"]
+with-hex = ["hex", "hex_literal"]
+with-log = ["log", "env_logger", "dotenv"]
+with-serde = ["serde", "serde_repr", "json"]
+with-rustls = ["rustls", "rustls_pemfile"]
 
 async = ["async-trait", "futures", "futures-util", "pin_project", "tokio", "tokio_stream"]
 collections = ["maplit"]
-db = ["num_traits", "sea_orm"]
+db = ["async", "chrono", "rust_decimal", "sea_orm"]
 derive = ["derive_more", "num_enum", "smart_default", "strum"]
 fs = ["tempfile"]
 hashmap = ["ahash", "ritelinked", "maplit"]
@@ -54,7 +54,7 @@ dotenv = { version = "0.15.0", optional = true }
 env_logger = { version = "0.9.0", optional = true }
 log = { version = "0.4.16", optional = true }
 
-async-trait = { version = "0.1.52", optional = true }
+async-trait = { version = "0.1.53", optional = true }
 futures = { version = "0.3.21", optional = true }
 futures-util = { version = "0.3.21", optional = true }
 pin_project = { version = "1.0.10", package = "pin-project", optional = true }
@@ -88,7 +88,7 @@ arc_swap = { version = "1.5.0", package = "arc-swap", optional = true }
 crossbeam = { version = "0.8.1", optional = true }
 flume = { version = "0.10.12", optional = true }
 
-num_traits = { version = "0.2.14", package = "num-traits", optional = true }
-sea_orm = { version = "0.6.0", package = "sea-orm", features = [
-    "sqlx-postgres", "sqlx-sqlite", "runtime-tokio-rustls", "macros"
-    ], default-features = false, optional = true }
+rust_decimal = { version = "1.23.1", optional = true }
+sea_orm = { version = "0.7.1", package = "sea-orm", features = [
+    "sqlx-postgres", "sqlx-sqlite", "runtime-tokio-rustls", "runtime-tokio"
+    ], optional = true }
