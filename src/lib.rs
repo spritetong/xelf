@@ -215,7 +215,7 @@ pub mod prelude {
     };
 
     #[cfg(feature = "zerocopy")]
-    pub use ::zerocopy::{self, AsBytes};
+    pub use ::zerocopy::{self, AsBytes, FromBytes};
 }
 
 /// Create an object and fill its memory with zero.
