@@ -163,6 +163,9 @@ pub mod prelude {
     #[cfg(feature = "pin_project")]
     pub use ::pin_project::{self, pin_project};
 
+    #[cfg(feature = "regex")]
+    pub use ::regex::{self, Regex};
+
     #[cfg(feature = "ritelinked")]
     pub use ::ritelinked::{self, linked_hash_map, linked_hash_set, LinkedHashMap, LinkedHashSet};
 
