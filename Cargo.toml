@@ -15,24 +15,24 @@ common = ["async", "chrono", "collections", "derive",
 none = []
 
 with-bytes = ["bytes", "bytestring", "zerocopy"]
-with-hex = ["hex", "hex_literal"]
-with-log = ["log", "env_logger", "dotenv"]
-with-serde = ["serde", "serde_repr", "json"]
-with-rustls = ["rustls", "rustls_pemfile"]
+with-hex = ["hex", "hex-literal"]
+with-log = ["log", "env-logger", "dotenv"]
+with-serde = ["serde", "serde-repr", "json"]
+with-rustls = ["rustls", "rustls-pemfile"]
 
-async = ["async-trait", "futures", "futures-util", "pin_project", "tokio", "tokio_stream"]
+async = ["async-stream", "async-trait", "futures", "futures-util", "mio", "pin-project", "tokio", "tokio-stream"]
 collections = ["maplit"]
-db = ["async", "chrono", "rust_decimal", "sea_orm"]
-derive = ["derive_more", "num_enum", "smart_default", "strum"]
+db = ["async", "chrono", "rust-decimal", "sea-orm", "sqlx"]
+derive = ["derive-more", "num-enum", "smart-default", "strum"]
 fs = ["tempfile"]
 hashmap = ["ahash", "ritelinked", "maplit"]
-json = ["base64", "serde_json", "num", "collections"]
+json = ["base64", "serde-json", "num", "collections"]
 net = ["ipnetwork"]
 num = []
-ptr = ["memoffset", "once_cell"]
+ptr = ["memoffset", "once-cell"]
 str = []
-signal = ["tokio_stream"]
-sync = ["arc_swap", "crossbeam", "flume"]
+signal = ["tokio-stream"]
+sync = ["arc-swap", "crossbeam", "flume"]
 vec = []
 
 [dependencies]
@@ -45,50 +45,55 @@ bytestring = { version = "1.0.0", features = ["serde"], optional = true }
 
 chrono = { version = "0.4.19", optional = true }
 
-derive_more = { version = "0.99.17", optional = true }
-num_enum = { version = "0.5.7", optional = true }
-smart_default = { version = "0.6.0", package = "smart-default", optional = true }
+derive-more = { version = "0.99.17", package = "derive_more", optional = true }
+num-enum = { version = "0.5.7", package = "num_enum", optional = true }
+smart-default = { version = "0.6.0", optional = true }
 strum = { version = "0.24.0", features = ["derive"], optional = true }
 
 dotenv = { version = "0.15.0", optional = true }
-env_logger = { version = "0.9.0", optional = true }
+env-logger = { version = "0.9.0", package = "env_logger", optional = true }
 log = { version = "0.4.16", optional = true }
 
+async-stream = { version = "0.3.3", optional = true }
 async-trait = { version = "0.1.53", optional = true }
 futures = { version = "0.3.21", optional = true }
 futures-util = { version = "0.3.21", optional = true }
-pin_project = { version = "1.0.10", package = "pin-project", optional = true }
+mio = { version = "0.8.2", optional = true }
+pin-project = { version = "1.0.10", optional = true }
 tokio = { version = "1.17.0", features = ["full"], optional = true }
-tokio_stream = { version = "0.1.8", package = "tokio-stream", features = [
+tokio-stream = { version = "0.1.8", features = [
     "time", "sync", "signal", "net", "fs", "io-util"], optional = true }
 
 hex = { version = "0.4.3", optional = true }
-hex_literal = { version = "0.3.4", package = "hex-literal", optional = true }
+hex-literal = { version = "0.3.4", optional = true }
 
 ipnetwork = { version = "0.18.0", optional = true }
 
 memoffset = { version = "0.6.5", optional = true }
 zerocopy = { version = "0.6.1", optional = true }
 
-once_cell = { version = "1.10.0", optional = true }
+once-cell = { version = "1.10.0", package = "once_cell", optional = true }
 
 regex = { version = "1.5.5", optional = true }
 
 base64 = { version = "0.13.0", optional = true }
 serde = { version = "1.0.136", features = ["derive"], optional = true }
-serde_json = { version = "1.0.79", optional = true }
-serde_repr = { version = "0.1.7", optional = true }
+serde-json = { version = "1.0.79", package = "serde_json", optional = true }
+serde-repr = { version = "0.1.7", package = "serde_repr", optional = true }
 
 tempfile = { version = "3.3.0", optional = true }
 
 rustls = { version = "0.20.4", optional = true }
-rustls_pemfile = { version = "0.3.0", package = "rustls-pemfile", optional = true }
+rustls-pemfile = { version = "0.3.0", optional = true }
 
-arc_swap = { version = "1.5.0", package = "arc-swap", optional = true }
+arc-swap = { version = "1.5.0", optional = true }
 crossbeam = { version = "0.8.1", optional = true }
 flume = { version = "0.10.12", optional = true }
 
-rust_decimal = { version = "1.23.1", optional = true }
-sea_orm = { version = "0.7.1", package = "sea-orm", features = [
+rust-decimal = { version = "1.23.1", package = "rust_decimal", optional = true }
+sea-orm = { version = "0.7.1", features = [
     "sqlx-postgres", "sqlx-sqlite", "runtime-tokio-rustls", "runtime-tokio"
+    ], optional = true }
+sqlx = { version = "0.5.11", features = [
+    "runtime-tokio-rustls", "postgres", "sqlite", "migrate", "any"
     ], optional = true }

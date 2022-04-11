@@ -96,10 +96,12 @@ pub mod prelude {
     #[cfg(any(feature = "ahash", feature = "collections"))]
     pub use ::std::hash::{BuildHasher, Hash};
 
-    #[cfg(feature = "arc_swap")]
+    #[cfg(feature = "arc-swap")]
     pub use arc_swap::{self, ArcSwap, ArcSwapAny};
 
-    #[cfg(feature = "async_trait")]
+    #[cfg(feature = "async-stream")]
+    pub use ::async_stream;
+    #[cfg(feature = "async-trait")]
     pub use ::async_trait::{self, async_trait};
 
     #[cfg(feature = "base64")]
@@ -120,13 +122,13 @@ pub mod prelude {
         sync::{Parker, ShardedLock},
     };
 
-    #[cfg(feature = "derive_more")]
-    pub use ::derive_more::{self, Deref, DerefMut};
+    #[cfg(feature = "derive-more")]
+    pub use ::derive_more::{self, AsMut, AsRef, Deref, DerefMut, Display};
 
     #[cfg(feature = "dotenv")]
     pub use dotenv;
 
-    #[cfg(feature = "env_logger")]
+    #[cfg(feature = "env-logger")]
     pub use env_logger;
 
     #[cfg(feature = "futures")]
@@ -134,12 +136,12 @@ pub mod prelude {
         self,
         future::{join_all, try_join_all, Future, TryFuture},
     };
-    #[cfg(feature = "futures_util")]
+    #[cfg(feature = "futures-util")]
     pub use ::futures_util;
 
     #[cfg(feature = "hex")]
     pub use ::hex::{self, FromHex, ToHex};
-    #[cfg(feature = "hex_literal")]
+    #[cfg(feature = "hex-literal")]
     pub use ::hex_literal::{self, hex};
 
     #[cfg(feature = "ipnetwork")]
@@ -151,16 +153,16 @@ pub mod prelude {
     #[cfg(feature = "maplit")]
     pub use ::maplit::{self, btreemap, btreeset, hashmap, hashset};
 
-    #[cfg(feature = "num_enum")]
+    #[cfg(feature = "num-enum")]
     pub use ::num_enum::{self, TryFromPrimitive};
 
-    #[cfg(feature = "once_cell")]
+    #[cfg(feature = "once-cell")]
     pub use once_cell::{
         self,
         sync::{Lazy, OnceCell},
     };
 
-    #[cfg(feature = "pin_project")]
+    #[cfg(feature = "pin-project")]
     pub use ::pin_project::{self, pin_project};
 
     #[cfg(feature = "regex")]
@@ -169,22 +171,24 @@ pub mod prelude {
     #[cfg(feature = "ritelinked")]
     pub use ::ritelinked::{self, linked_hash_map, linked_hash_set, LinkedHashMap, LinkedHashSet};
 
-    #[cfg(feature = "rust_decimal")]
+    #[cfg(feature = "rust-decimal")]
     pub use ::rust_decimal::{self, Decimal};
 
     #[cfg(feature = "rustls")]
     pub use ::rustls;
-    #[cfg(feature = "rustls_pemfile")]
+    #[cfg(feature = "rustls-pemfile")]
     pub use ::rustls_pemfile;
 
-    #[cfg(feature = "sea_orm")]
+    #[cfg(feature = "sea-orm")]
     pub use ::sea_orm::{
         self,
         strum::{AsRefStr as _, EnumMessage as _, IntoEnumIterator as _},
         Value as DbValue, Values as DbValues,
     };
+    #[cfg(feature = "sqlx")]
+    pub use ::sqlx;
 
-    #[cfg(feature = "smart_default")]
+    #[cfg(feature = "smart-default")]
     pub use ::smart_default::{self, SmartDefault};
     #[cfg(feature = "strum")]
     pub use ::strum::{self, AsRefStr, EnumIter, EnumMessage, IntoEnumIterator, IntoStaticStr};
@@ -195,11 +199,11 @@ pub mod prelude {
         de::{DeserializeOwned, Deserializer},
         Deserialize, Serialize,
     };
-    #[cfg(feature = "serde_json")]
+    #[cfg(feature = "serde-json")]
     pub use ::serde_json::{
         self, json, Map as JsonMap, Number, Number as JsonNumber, Value, Value as Json,
     };
-    #[cfg(feature = "serde_repr")]
+    #[cfg(feature = "serde-repr")]
     pub use ::serde_repr::{self, Deserialize_repr, Serialize_repr};
 
     #[cfg(feature = "tempfile")]
@@ -210,7 +214,7 @@ pub mod prelude {
         self,
         sync::{broadcast, mpsc, Mutex, RwLock},
     };
-    #[cfg(feature = "tokio_stream")]
+    #[cfg(feature = "tokio-stream")]
     pub use ::tokio_stream::{
         self,
         wrappers::{errors::BroadcastStreamRecvError, BroadcastStream, ReceiverStream},
@@ -233,8 +237,10 @@ macro_rules! zeroed_init {
 
     ($x:ident $(,$field:ident: $value:expr)* $(,)?) => (
         unsafe {
-            #[allow(invalid_value)]
-            $x = ::std::mem::MaybeUninit::zeroed().assume_init();
+            $x = {
+                #[allow(invalid_value)]
+                ::std::mem::MaybeUninit::zeroed().assume_init()
+            };
             $(std::ptr::write(&mut $x.$field, $value);)*
         }
     );

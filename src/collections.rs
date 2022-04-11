@@ -1,4 +1,4 @@
-#[cfg(feature = "serde_json")]
+#[cfg(feature = "serde-json")]
 use ::serde_json::{Map as JsonMap, Value as Json};
 use ::std::{
     borrow::Borrow,
@@ -91,13 +91,13 @@ impl_contains!(@map K, [], impl<K, Q, V, S> for ritelinked::LinkedHashMap<K, V, 
 #[cfg(feature = "ritelinked")]
 impl_contains!(@set K, [], impl<K, Q, S> for ritelinked::LinkedHashSet<K, S> where S: BuildHasher);
 
-#[cfg(feature = "serde_json")]
+#[cfg(feature = "serde-json")]
 impl_contains!(@map String, [], impl<Q> for JsonMap<String, Json> where);
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    #[cfg(feature = "serde_json")]
+    #[cfg(feature = "serde-json")]
     use serde_json::json;
 
     #[test]
@@ -118,7 +118,7 @@ mod tests {
         assert!([1, 2, 3].contains_it(&1));
         assert!(vec![1, 2, 3].contains_it(&1));
 
-        #[cfg(feature = "serde_json")]
+        #[cfg(feature = "serde-json")]
         {
             let a = json!({"1": 1, "2": 2, "3": 3});
             assert!(a.as_object().unwrap().contains_it("1"));
