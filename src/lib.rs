@@ -201,7 +201,7 @@ pub mod prelude {
     };
     #[cfg(feature = "serde-json")]
     pub use ::serde_json::{
-        self, json, Map as JsonMap, Number, Number as JsonNumber, Value, Value as Json,
+        self, json, Map as JsonMap, Number, Number as JsonNumber, Value as Json,
     };
     #[cfg(feature = "serde-repr")]
     pub use ::serde_repr::{self, Deserialize_repr, Serialize_repr};

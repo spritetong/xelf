@@ -1,33 +1,33 @@
 use crate::collections::Contains;
 use crate::num::*;
 use ::serde::{de::DeserializeOwned, ser::Serialize};
-use ::serde_json::{json, map::Map, value::Index, Value};
+use ::serde_json::{json, map::Map, value::Index, Value as Json};
 use ::std::{borrow::Borrow, hash::Hash};
 
 ////////////////////////////////////////////////////////////////////////////////
 
 /// Trait for JSON object, arrary, associated with an index.
 pub trait JsonIndexed<I> {
-    fn get_member(&self, index: I) -> Option<&Value>;
+    fn get_member(&self, index: I) -> Option<&Json>;
 }
 
-impl<I: Index> JsonIndexed<I> for Value {
+impl<I: Index> JsonIndexed<I> for Json {
     #[inline(always)]
-    fn get_member(&self, index: I) -> Option<&Value> {
+    fn get_member(&self, index: I) -> Option<&Json> {
         self.get(index)
     }
 }
 
-impl<I: AsRef<str>> JsonIndexed<I> for Map<String, Value> {
+impl<I: AsRef<str>> JsonIndexed<I> for Map<String, Json> {
     #[inline(always)]
-    fn get_member(&self, index: I) -> Option<&Value> {
+    fn get_member(&self, index: I) -> Option<&Json> {
         self.get(index.as_ref())
     }
 }
 
-impl<I: Num + Index> JsonIndexed<I> for Vec<Value> {
+impl<I: Num + Index> JsonIndexed<I> for Vec<Json> {
     #[inline(always)]
-    fn get_member(&self, index: I) -> Option<&Value> {
+    fn get_member(&self, index: I) -> Option<&Json> {
         self.get(index.as_usize())
     }
 }
@@ -197,7 +197,7 @@ pub trait JsonObjectRsx {
         K: Hash + Ord + Eq + Borrow<str>;
 }
 
-impl JsonObjectRsx for Value {
+impl JsonObjectRsx for Json {
     #[inline]
     fn insert2<T: Serialize>(&mut self, k: &str, v: T) -> &mut Self {
         self.as_object_mut().unwrap().insert(k.to_owned(), json!(v));
@@ -205,10 +205,10 @@ impl JsonObjectRsx for Value {
     }
 
     fn take_with_prefix(&mut self, prefix: &str) -> Self {
-        Value::from(if let Some(src) = self.as_object_mut() {
+        Json::from(if let Some(src) = self.as_object_mut() {
             src.take_with_prefix(prefix)
         } else {
-            Map::<String, Value>::new()
+            Map::<String, Json>::new()
         })
     }
 
@@ -226,7 +226,7 @@ impl JsonObjectRsx for Value {
     }
 }
 
-impl JsonObjectRsx for Map<String, Value> {
+impl JsonObjectRsx for Map<String, Json> {
     #[inline]
     fn insert2<T: Serialize>(&mut self, k: &str, v: T) -> &mut Self {
         self.insert(k.to_owned(), json!(v));
@@ -237,7 +237,7 @@ impl JsonObjectRsx for Map<String, Value> {
         let mut map = Map::new();
         for (k, v) in self {
             if k.starts_with(prefix) {
-                map.insert((&k[prefix.len()..]).to_owned(), Value::from(v.take()));
+                map.insert((&k[prefix.len()..]).to_owned(), Json::from(v.take()));
             }
         }
         map
