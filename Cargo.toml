@@ -8,7 +8,7 @@ name = "rsx"
 path = "src/lib.rs"
 
 [features]
-default = ["chrono", "collections", "derive", "ptr", "vec"]
+default = ["chrono", "collections", "derive", "vec"]
 common = ["async", "chrono", "collections", "derive", 
           "fs", "hashmap", "net", "ptr", "regex", "str", "sync", "vec",
           "with-bytes", "with-hex", "with-log", "with-rustls", "with-serde"]
