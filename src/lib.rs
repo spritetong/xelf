@@ -61,12 +61,6 @@ pub mod prelude {
     #[cfg(feature = "str")]
     pub use crate::str::*;
 
-    #[cfg(feature = "sync")]
-    pub use std::{
-        sync::{self, atomic::*, Arc, Mutex as StdMutex, RwLock as StdRwLock},
-        thread,
-    };
-
     #[cfg(feature = "ptr")]
     pub use crate::ptr::*;
     #[cfg(feature = "ptr")]
@@ -87,6 +81,8 @@ pub mod prelude {
         rc::Rc,
         slice,
         str::{self, FromStr},
+        sync::{self, atomic::*, Arc, Mutex as StdMutex, RwLock as StdRwLock},
+        thread,
     };
 
     ////////////////////////////////////////////////////////////////////////////

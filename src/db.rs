@@ -4,11 +4,11 @@ mod orm_utils;
 use crate::prelude::*;
 use orm_utils::*;
 
-pub use ::sea_orm::{
+pub use sea_orm::{
     entity::prelude::*,
-    sea_query::{Expr, Func, Query},
-    Condition, ConnectionTrait, Database, DatabaseConnection, IntoActiveModel, NotSet, QueryOrder,
-    Set, Statement, Unchanged,
+    sea_query::{ConditionExpression, Expr, Func, Query, SimpleExpr},
+    Condition, ConnectionTrait, Database, DatabaseConnection, DatabaseTransaction, DbBackend,
+    IntoActiveModel, NotSet, QueryOrder, QuerySelect, QueryTrait, Set, Statement, Unchanged,
 };
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -85,7 +85,7 @@ pub struct SqlHelper {
     #[deref]
     #[deref_mut]
     pub statement: Statement,
-    params: Rc<ParamMap>,
+    params: Arc<ParamMap>,
 }
 
 impl SqlHelper {
@@ -136,14 +136,21 @@ impl From<Statement> for SqlHelper {
         //println!("{:?} {:?}", &statement, &params);
         Self {
             statement,
-            params: Rc::new(params),
+            params: Arc::new(params),
         }
+    }
+}
+
+impl Into<Statement> for SqlHelper {
+    fn into(self) -> Statement {
+        let Self { statement, .. } = self;
+        statement
     }
 }
 
 #[self_referencing]
 pub struct SqlParamIterator {
-    params: Rc<ParamMap>,
+    params: Arc<ParamMap>,
     #[borrows(params)]
     #[covariant]
     it: ritelinked::linked_hash_map::Iter<'this, ByteString, ParamIndices>,

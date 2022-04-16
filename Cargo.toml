@@ -21,7 +21,7 @@ with-rustls = ["rustls", "rustls-pemfile"]
 async = ["async-stream", "async-trait", "futures", "futures-util", "mio", "pin-project", "tokio", "tokio-stream"]
 collections = ["maplit", "smallvec", "vec"]
 db = ["async", "chrono", "collections", "hashmap", "ouroboros", "rust-decimal", "sea-orm", "sqlx",
-      "with-bytes", "with-serde"]
+    "with-bytes", "with-serde"]
 derive = ["derive-more", "num-enum", "smart-default", "strum"]
 fs = ["tempfile"]
 hashmap = ["ahash", "ritelinked", "maplit"]
