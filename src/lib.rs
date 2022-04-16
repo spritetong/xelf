@@ -162,6 +162,9 @@ pub mod prelude {
         sync::{Lazy, OnceCell},
     };
 
+    #[cfg(feature = "ouroboros")]
+    pub use ::ouroboros::{self, self_referencing};
+
     #[cfg(feature = "pin-project")]
     pub use ::pin_project::{self, pin_project};
 
@@ -183,10 +186,12 @@ pub mod prelude {
     pub use ::sea_orm::{
         self,
         strum::{AsRefStr as _, EnumMessage as _, IntoEnumIterator as _},
-        Value as DbValue, Values as DbValues,
     };
     #[cfg(feature = "sqlx")]
     pub use ::sqlx;
+
+    #[cfg(feature = "smallvec")]
+    pub use ::smallvec::{self, SmallVec};
 
     #[cfg(feature = "smart-default")]
     pub use ::smart_default::{self, SmartDefault};

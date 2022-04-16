@@ -8,11 +8,9 @@ name = "rsx"
 path = "src/lib.rs"
 
 [features]
-default = ["chrono", "collections", "derive", "vec"]
-common = ["async", "chrono", "collections", "derive", 
-          "fs", "hashmap", "net", "ptr", "regex", "str", "sync", "vec",
+default = ["chrono", "collections", "derive", "memoffset", "once-cell", "ouroboros"]
+common = ["default", "async", "fs", "hashmap", "net", "ptr", "regex", "str", "sync",
           "with-bytes", "with-hex", "with-log", "with-rustls", "with-serde"]
-none = []
 
 with-bytes = ["bytes", "bytestring", "zerocopy"]
 with-hex = ["hex", "hex-literal"]
@@ -21,79 +19,82 @@ with-serde = ["serde", "serde-repr", "json"]
 with-rustls = ["rustls", "rustls-pemfile"]
 
 async = ["async-stream", "async-trait", "futures", "futures-util", "mio", "pin-project", "tokio", "tokio-stream"]
-collections = ["maplit"]
-db = ["async", "chrono", "rust-decimal", "sea-orm", "sqlx"]
+collections = ["maplit", "smallvec", "vec"]
+db = ["async", "chrono", "collections", "hashmap", "ouroboros", "rust-decimal", "sea-orm", "sqlx",
+      "with-bytes", "with-serde"]
 derive = ["derive-more", "num-enum", "smart-default", "strum"]
 fs = ["tempfile"]
 hashmap = ["ahash", "ritelinked", "maplit"]
 json = ["base64", "serde-json", "num", "collections"]
 net = ["ipnetwork"]
 num = []
-ptr = ["memoffset", "once-cell"]
+ptr = ["memoffset", "once-cell", "ouroboros"]
 str = []
 signal = ["tokio-stream"]
 sync = ["arc-swap", "crossbeam", "flume"]
 vec = []
 
 [dependencies]
-ahash = { version = "0.7.6", optional = true }
-ritelinked = { version = "0.3.2", optional = true }
-maplit = { version = "1.0.2", optional = true }
+ahash = { version = "^0.7", optional = true }
+maplit = { version = "^1.0", optional = true }
+ritelinked = { version = "^0.3", optional = true }
+smallvec = { version = "^1.8", optional = true }
 
-bytes = { version = "1.1.0", optional = true }
-bytestring = { version = "1.0.0", features = ["serde"], optional = true }
+bytes = { version = "^1.1", optional = true }
+bytestring = { version = "^1.0", features = ["serde"], optional = true }
 
-chrono = { version = "0.4.19", optional = true }
+chrono = { version = "^0.4", optional = true }
 
-derive-more = { version = "0.99.17", package = "derive_more", optional = true }
-num-enum = { version = "0.5.7", package = "num_enum", optional = true }
-smart-default = { version = "0.6.0", optional = true }
-strum = { version = "0.24.0", features = ["derive"], optional = true }
+derive-more = { version = "^0.99", package = "derive_more", optional = true }
+num-enum = { version = "^0.5", package = "num_enum", optional = true }
+smart-default = { version = "^0.6", optional = true }
+strum = { version = "^0.24", features = ["derive"], optional = true }
 
-dotenv = { version = "0.15.0", optional = true }
-env-logger = { version = "0.9.0", package = "env_logger", optional = true }
-log = { version = "0.4.16", optional = true }
+dotenv = { version = "^0.15", optional = true }
+env-logger = { version = "^0.9", package = "env_logger", optional = true }
+log = { version = "^0.4", optional = true }
 
-async-stream = { version = "0.3.3", optional = true }
-async-trait = { version = "0.1.53", optional = true }
-futures = { version = "0.3.21", optional = true }
-futures-util = { version = "0.3.21", optional = true }
-mio = { version = "0.8.2", optional = true }
-pin-project = { version = "1.0.10", optional = true }
-tokio = { version = "1.17.0", features = ["full"], optional = true }
-tokio-stream = { version = "0.1.8", features = [
+async-stream = { version = "^0.3", optional = true }
+async-trait = { version = "^0.1", optional = true }
+futures = { version = "^0.3", optional = true }
+futures-util = { version = "^0.3", optional = true }
+mio = { version = "^0.8", optional = true }
+pin-project = { version = "^1.0", optional = true }
+tokio = { version = "^1.17", features = ["full"], optional = true }
+tokio-stream = { version = "^0.1", features = [
     "time", "sync", "signal", "net", "fs", "io-util"], optional = true }
 
-hex = { version = "0.4.3", optional = true }
-hex-literal = { version = "0.3.4", optional = true }
+hex = { version = "^0.4", optional = true }
+hex-literal = { version = "^0.3", optional = true }
 
-ipnetwork = { version = "0.18.0", optional = true }
+ipnetwork = { version = "^0.19", optional = true }
 
-memoffset = { version = "0.6.5", optional = true }
-zerocopy = { version = "0.6.1", optional = true }
+memoffset = { version = "^0.6", optional = true }
+zerocopy = { version = "^0.6", optional = true }
 
-once-cell = { version = "1.10.0", package = "once_cell", optional = true }
+once-cell = { version = "^1.10", package = "once_cell", optional = true }
+ouroboros = { version = "^0.15", optional = true }
 
-regex = { version = "1.5.5", optional = true }
+regex = { version = "^1.5", optional = true }
 
-base64 = { version = "0.13.0", optional = true }
-serde = { version = "1.0.136", features = ["derive"], optional = true }
-serde-json = { version = "1.0.79", package = "serde_json", optional = true }
-serde-repr = { version = "0.1.7", package = "serde_repr", optional = true }
+base64 = { version = "^0.13", optional = true }
+serde = { version = "^1.0", features = ["derive"], optional = true }
+serde-json = { version = "^1.0", package = "serde_json", optional = true }
+serde-repr = { version = "^0.1", package = "serde_repr", optional = true }
 
-tempfile = { version = "3.3.0", optional = true }
+tempfile = { version = "^3.3", optional = true }
 
-rustls = { version = "0.20.4", optional = true }
-rustls-pemfile = { version = "0.3.0", optional = true }
+rustls = { version = "^0.20", optional = true }
+rustls-pemfile = { version = "^1.0", optional = true }
 
-arc-swap = { version = "1.5.0", optional = true }
-crossbeam = { version = "0.8.1", optional = true }
-flume = { version = "0.10.12", optional = true }
+arc-swap = { version = "^1.5", optional = true }
+crossbeam = { version = "^0.8", optional = true }
+flume = { version = "^0.10", optional = true }
 
-rust-decimal = { version = "1.23.1", package = "rust_decimal", optional = true }
-sea-orm = { version = "0.7.1", features = [
+rust-decimal = { version = "^1.23", package = "rust_decimal", optional = true }
+sea-orm = { version = "^0.7", features = [
     "sqlx-postgres", "sqlx-sqlite", "runtime-tokio-rustls", "runtime-tokio"
     ], optional = true }
-sqlx = { version = "0.5.11", features = [
+sqlx = { version = "^0.5", features = [
     "runtime-tokio-rustls", "postgres", "sqlite", "migrate", "any"
     ], optional = true }
