@@ -4,7 +4,7 @@ use sea_orm::entity::prelude::*;
 pub(crate) fn orm_validate_json<T, S, C>(jsn: &JsonMap<String, Json>, skip: &S) -> Result<(), DbErr>
 where
     T: Default + Serialize + DeserializeOwned,
-    S: Contains<C, str>,
+    S: ?Sized + Contains<C, str>,
     C: Eq + Ord + Hash + Borrow<str>,
 {
     // TODO: no safety ModelTrait::set() ???

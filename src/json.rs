@@ -193,7 +193,7 @@ pub trait JsonObjectRsx {
     fn merge_to<T, S, K>(&self, dst: &mut T, skip: &S) -> serde_json::Result<()>
     where
         T: Serialize + DeserializeOwned,
-        S: Contains<K, str>,
+        S: ?Sized + Contains<K, str>,
         K: Hash + Ord + Eq + Borrow<str>;
 }
 
@@ -215,7 +215,7 @@ impl JsonObjectRsx for Json {
     fn merge_to<T, S, K>(&self, dst: &mut T, skip: &S) -> serde_json::Result<()>
     where
         T: Serialize + DeserializeOwned,
-        S: Contains<K, str>,
+        S: ?Sized + Contains<K, str>,
         K: Hash + Ord + Eq + Borrow<str>,
     {
         if let Some(map) = self.as_object() {
@@ -246,7 +246,7 @@ impl JsonObjectRsx for Map<String, Json> {
     fn merge_to<T, S, K>(&self, dst: &mut T, skip: &S) -> serde_json::Result<()>
     where
         T: Serialize + DeserializeOwned,
-        S: Contains<K, str>,
+        S: ?Sized + Contains<K, str>,
         K: Hash + Ord + Eq + Borrow<str>,
     {
         let mut value = serde_json::to_value(&dst)?;

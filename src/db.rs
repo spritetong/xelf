@@ -17,14 +17,14 @@ pub use sea_orm::{
 pub trait OrmModelExt {
     fn update_by_json<S, C>(&mut self, jsn: &Json, skip: &S) -> Result<(), DbErr>
     where
-        S: Contains<C, str>,
+        S: ?Sized + Contains<C, str>,
         C: Eq + Ord + Hash + Borrow<str>;
 }
 
 pub trait OrmActiveModelExt {
     fn update_by_json<S, C>(&mut self, jsn: &Json, skip: &S) -> Result<(), DbErr>
     where
-        S: Contains<C, str>,
+        S: ?Sized + Contains<C, str>,
         C: Eq + Ord + Hash + Borrow<str>;
 }
 
@@ -32,7 +32,7 @@ macro_rules! impl_update_by_json {
     () => {
         fn update_by_json<S, C>(&mut self, jsn: &Json, skip: &S) -> Result<(), DbErr>
         where
-            S: Contains<C, str>,
+            S: ?Sized + Contains<C, str>,
             C: Eq + Ord + Hash + Borrow<str>,
         {
             let map = some_or_return!(
