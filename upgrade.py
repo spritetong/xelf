@@ -6,23 +6,12 @@ import re
 import subprocess
 
 
-def shell_run(cmd, **kwargs):
-    kwargs['shell'] = True
-    return subprocess.call(cmd, **kwargs)
-
-
-def camel_to_snake(name):
-    name = re.sub('(.)([A-Z][a-z]+)', r'\1_\2', name)
-    name = re.sub('__([A-Z])', r'_\1', name)
-    name = re.sub('([a-z0-9])([A-Z])', r'\1_\2', name)
-    return name.lower()
-
-
 def fix_cargo_toml(path: str):
-    dependencies_re = re.compile(r'^\s*\[dependencies\]\s*$')
-    crate_re = re.compile(r'^(\s*)([\w-]+)(\s*=\s*\{\s*version\s*=\s*")([\d\.]+)(".*)$')
+    ignored = []
+    pinned = {}
 
-    special_versions = {}
+    dependencies_re = re.compile(r'^\s*\[dependencies\]\s*$')
+    crate_re = re.compile(r'^(\s*)([\w-]+)(\s*=\s*(?:\{\s*version\s*=\s*)?")([\d\.]+)(".*)$')
 
     with open(path, 'r', encoding='utf-8') as f:
         lines = f.readlines()
@@ -39,8 +28,10 @@ def fix_cargo_toml(path: str):
         if found:
             name = found[0][1]
             version = found[0][3]
-            if name in special_versions:
-                version = special_versions[name]
+            if name in ignored:
+                continue
+            if name in pinned:
+                version = pinned[name]
             elif not version.startswith('^'):
                 version = '^' + '.'.join(version.split('.')[:2])
             if version != found[0][3]:
@@ -54,8 +45,8 @@ def fix_cargo_toml(path: str):
 
 def main():
     os.chdir(os.path.dirname(__file__))
-    shell_run('cargo upgrade')
-    shell_run('cargo update')
+    subprocess.call('cargo upgrade', shell=True)
+    subprocess.call('cargo update', shell=True)
     fix_cargo_toml('Cargo.toml')
 
 

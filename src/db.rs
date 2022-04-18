@@ -8,7 +8,8 @@ pub use sea_orm::{
     entity::prelude::*,
     sea_query::{ConditionExpression, Expr, Func, Query, SimpleExpr},
     Condition, ConnectionTrait, Database, DatabaseConnection, DatabaseTransaction, DbBackend,
-    IntoActiveModel, NotSet, QueryOrder, QuerySelect, QueryTrait, Set, Statement, Unchanged,
+    ExecResult, IntoActiveModel, NotSet, QueryOrder, QuerySelect, QueryTrait, Set, Statement,
+    Unchanged,
 };
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -111,6 +112,11 @@ impl SqlHelper {
             }
         }
         self
+    }
+
+    #[inline]
+    pub fn bind_optional<N: AsRef<str>>(&mut self, name: N, optional: bool) -> &mut Self {
+        self.bind_param(name, optional as i32)
     }
 }
 

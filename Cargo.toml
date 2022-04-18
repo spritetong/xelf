@@ -1,6 +1,6 @@
 [package]
 name = "rsx"
-version = "0.1.1"
+version = "0.1.2"
 edition = "2021"
 
 [lib]
@@ -8,9 +8,11 @@ name = "rsx"
 path = "src/lib.rs"
 
 [features]
-default = ["chrono", "collections", "derive", "memoffset", "once-cell", "ouroboros"]
-common = ["default", "async", "fs", "hashmap", "net", "ptr", "regex", "str", "sync",
+default = ["full"]
+minimal = ["chrono", "collections", "derive", "memoffset", "once-cell", "ouroboros"]
+common = ["minimal", "async", "fs", "hashmap", "net", "ptr", "regex", "str", "sync",
           "with-bytes", "with-hex", "with-log", "with-rustls", "with-serde"]
+full = ["common", "db"]
 
 with-bytes = ["bytes", "bytestring", "zerocopy"]
 with-hex = ["hex", "hex-literal"]
@@ -18,14 +20,15 @@ with-log = ["log", "env-logger", "dotenv"]
 with-serde = ["serde", "serde-repr", "json"]
 with-rustls = ["rustls", "rustls-pemfile"]
 
-async = ["async-stream", "async-trait", "futures", "futures-util", "mio", "pin-project", "tokio", "tokio-stream"]
+async = ["async-stream", "async-trait", "flume", "futures", "futures-util",
+	"mio", "pin-project", "tokio", "tokio-stream"]
 collections = ["maplit", "smallvec", "vec"]
-db = ["async", "chrono", "collections", "hashmap", "ouroboros", "rust-decimal", "sea-orm", "sqlx",
-    "with-bytes", "with-serde"]
+db = ["async", "chrono", "collections", "hashmap", "ouroboros", "rust-decimal",
+    "sea-orm", "sqlx", "with-bytes", "with-serde"]
 derive = ["derive-more", "num-enum", "smart-default", "strum"]
 fs = ["tempfile"]
 hashmap = ["ahash", "ritelinked", "maplit"]
-json = ["base64", "serde-json", "num", "collections"]
+json = ["base64", "serde-json", "num", "collections", "with-hex"]
 net = ["ipnetwork"]
 num = []
 ptr = ["memoffset", "once-cell", "ouroboros"]
