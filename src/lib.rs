@@ -201,9 +201,9 @@ pub mod prelude {
         Deserialize, Serialize,
     };
     #[cfg(feature = "serde-json")]
-    pub use ::serde_json::{
-        self, json, Map as JsonMap, Number, Number as JsonNumber, Value as Json,
-    };
+    pub use ::serde_json::{self, json, Number, Number as JsonNumber, Value as Json};
+    #[cfg(feature = "serde-json")]
+    pub type JsonMap = ::serde_json::Map<String, Json>;
     #[cfg(feature = "serde-repr")]
     pub use ::serde_repr::{self, Deserialize_repr, Serialize_repr};
 

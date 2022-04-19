@@ -1,7 +1,7 @@
 use crate::prelude::*;
 use sea_orm::entity::prelude::*;
 
-pub(crate) fn orm_validate_json<T, S, C>(jsn: &JsonMap<String, Json>, skip: &S) -> Result<(), DbErr>
+pub(crate) fn orm_validate_json<T, S, C>(jsn: &JsonMap, skip: &S) -> Result<(), DbErr>
 where
     T: Default + Serialize + DeserializeOwned,
     S: ?Sized + Contains<C, str>,

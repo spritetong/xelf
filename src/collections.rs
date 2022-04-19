@@ -1,5 +1,5 @@
 #[cfg(feature = "serde-json")]
-use ::serde_json::{Map as JsonMap, Value as Json};
+use ::serde_json::{Map, Value as Json};
 use ::std::{
     borrow::Borrow,
     collections::{BTreeMap, BTreeSet, HashMap, HashSet, VecDeque},
@@ -92,7 +92,7 @@ impl_contains!(@map K, [], impl<K, Q, V, S> for ritelinked::LinkedHashMap<K, V, 
 impl_contains!(@set K, [], impl<K, Q, S> for ritelinked::LinkedHashSet<K, S> where S: BuildHasher);
 
 #[cfg(feature = "serde-json")]
-impl_contains!(@map String, [], impl<Q> for JsonMap<String, Json> where);
+impl_contains!(@map String, [], impl<Q> for Map<String, Json> where);
 
 #[cfg(test)]
 mod tests {
