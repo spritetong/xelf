@@ -88,11 +88,15 @@ type ParamMap = LinkedHashMap<ByteString, ParamIndices>;
 pub struct SqlHelper {
     #[deref]
     #[deref_mut]
-    pub statement: Statement,
+    statement: Statement,
     params: Arc<ParamMap>,
 }
 
 impl SqlHelper {
+    pub fn into_statement(self) -> Statement {
+        self.statement
+    }
+
     pub fn iter_params(&self) -> SqlParamIterator {
         let params = self.params.clone();
         SqlParamIteratorBuilder {
@@ -135,7 +139,7 @@ impl From<Statement> for SqlHelper {
                             _ => {
                                 let mut indices = ParamIndices::new();
                                 indices.push(index as u16);
-                                params.insert_s(name.deref().clone().into(), indices);
+                                params.insert(name.deref().clone().into(), indices);
                             }
                         }
                     }
@@ -152,8 +156,7 @@ impl From<Statement> for SqlHelper {
 
 impl Into<Statement> for SqlHelper {
     fn into(self) -> Statement {
-        let Self { statement, .. } = self;
-        statement
+        self.statement
     }
 }
 
