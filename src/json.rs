@@ -176,12 +176,13 @@ pub trait JsonObjectRsx {
     ///
     /// let mut jsn = json!({});
     ///
-    /// jsn.insert2("name", "tom").insert2("age", 16);
+    /// jsn.insert_s("name", "tom");
+    /// jsn.insert_s("age", 16);
     ///
     /// assert_eq!(jsn.get_or("name", ""), "tom");
     /// assert_eq!(jsn.get_or("age", 16), 16);
     /// ```
-    fn insert2<T: Serialize>(&mut self, k: &str, v: T) -> &mut Self;
+    fn insert_s<T: Serialize>(&mut self, k: &str, v: T) -> Option<Json>;
 
     /// Take all fields with the prefix and insert into a new object.
     ///
@@ -199,9 +200,8 @@ pub trait JsonObjectRsx {
 
 impl JsonObjectRsx for Json {
     #[inline]
-    fn insert2<T: Serialize>(&mut self, k: &str, v: T) -> &mut Self {
-        self.as_object_mut().unwrap().insert(k.to_owned(), json!(v));
-        self
+    fn insert_s<T: Serialize>(&mut self, k: &str, v: T) -> Option<Json> {
+        self.as_object_mut().unwrap().insert(k.to_owned(), json!(v))
     }
 
     fn take_with_prefix(&mut self, prefix: &str) -> Self {
@@ -228,9 +228,8 @@ impl JsonObjectRsx for Json {
 
 impl JsonObjectRsx for Map<String, Json> {
     #[inline]
-    fn insert2<T: Serialize>(&mut self, k: &str, v: T) -> &mut Self {
-        self.insert(k.to_owned(), json!(v));
-        self
+    fn insert_s<T: Serialize>(&mut self, k: &str, v: T) -> Option<Json> {
+        self.insert(k.to_owned(), json!(v))
     }
 
     fn take_with_prefix(&mut self, prefix: &str) -> Self {
@@ -318,10 +317,11 @@ mod tests {
     }
 
     #[test]
-    fn test_json_insert2() {
+    fn test_json_insert() {
         let mut jsn = json!({});
 
-        jsn.insert2("name", "tom").insert2("age", 16);
+        jsn.insert_s("name", "tom");
+        jsn.insert_s("age", 16);
 
         assert_eq!(jsn.get_or("name", ""), "tom");
         assert_eq!(jsn.get_or("age", 16), 16);

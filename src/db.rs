@@ -7,10 +7,13 @@ use orm_utils::*;
 pub use sea_orm::{
     entity::prelude::*,
     sea_query::{ConditionExpression, Expr, Func, Query, SimpleExpr},
-    Condition, ConnectionTrait, Database, DatabaseConnection, DatabaseTransaction, DbBackend,
-    ExecResult, IntoActiveModel, NotSet, QueryOrder, QuerySelect, QueryTrait, Set, Statement,
+    Condition, ConnectOptions, ConnectionTrait, Database, DatabaseBackend, DatabaseConnection,
+    DatabaseTransaction, DbBackend, DbConn, DbErr, ExecResult, FromQueryResult, IntoActiveModel,
+    JoinType, NotSet, QueryOrder, QuerySelect, QueryTrait, Set, Statement, TransactionTrait,
     Unchanged,
 };
+
+pub type DbResult<T> = Result<T, DbErr>;
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -132,7 +135,7 @@ impl From<Statement> for SqlHelper {
                             _ => {
                                 let mut indices = ParamIndices::new();
                                 indices.push(index as u16);
-                                params.insert(name.deref().clone().into(), indices);
+                                params.insert_s(name.deref().clone().into(), indices);
                             }
                         }
                     }
