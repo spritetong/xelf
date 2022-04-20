@@ -195,7 +195,7 @@ pub enum DbLockMode {
 }
 
 #[derive(Clone, Deref, Debug)]
-pub struct IdenStr<T: AsRef<str> + Clone + Send + Sync>(T);
+pub struct IdenStr<T: AsRef<str> + Clone + Send + Sync>(pub T);
 
 impl<T: AsRef<str> + Clone + Send + Sync> Iden for IdenStr<T> {
     fn unquoted(&self, s: &mut dyn std::fmt::Write) {
