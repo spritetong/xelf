@@ -306,25 +306,21 @@ impl QueryHelper {
     {
         let mut order_fields: Vec<OrderByField> = vec![];
 
-        match order_by {
-            Some(v) if v.is_string() => {
-                let order_by = v.as_str().unwrap();
-                let re =
-                    Regex::new(r"\b\s*([[:word:]]+)\s*((?i:ASC|DESC)?)\s*\b(?:,|;|$)").unwrap();
-                for cap in re.captures_iter(order_by) {
-                    order_fields.push(OrderByField {
-                        field: cap[1].to_owned(),
-                        asc: cap[2].to_ascii_uppercase() != "DESC",
-                        wrapper_func: IdenStr(
-                            wrapper_funcs
-                                .and_then(|x| x.get(&cap[1]).map(|x| x.as_ref().to_owned()))
-                                .unwrap_or_else(|| String::new())
-                                .into(),
-                        ),
-                    });
-                }
+        if let Some(Json::String(order_by)) = order_by {
+            let re =
+                Regex::new(r"\b\s*([[:word:]]+)\s*((?i:ASC|DESC)?)\s*\b(?:,|;|$)").unwrap();
+            for cap in re.captures_iter(order_by) {
+                order_fields.push(OrderByField {
+                    field: cap[1].to_owned(),
+                    asc: cap[2].to_ascii_uppercase() != "DESC",
+                    wrapper_func: IdenStr(
+                        wrapper_funcs
+                            .and_then(|x| x.get(&cap[1]).map(|x| x.as_ref().to_owned()))
+                            .unwrap_or_else(|| String::new())
+                            .into(),
+                    ),
+                });
             }
-            _ => (),
         }
 
         Self { order_fields }
