@@ -6,11 +6,10 @@ use orm_utils::*;
 
 pub use sea_orm::{
     entity::prelude::*,
-    sea_query::{ConditionExpression, Expr, Func, Query, SimpleExpr},
-    Condition, ConnectOptions, ConnectionTrait, Database, DatabaseBackend,
-    DatabaseTransaction, DbBackend, DbErr, ExecResult, FromQueryResult, IntoActiveModel,
-    JoinType, NotSet, QueryOrder, QuerySelect, QueryTrait, Set, Statement,
-    TransactionTrait, Unchanged,
+    sea_query::{ConditionExpression, Expr, Func, Query, SimpleExpr, SqlWriter},
+    Condition, ConnectOptions, ConnectionTrait, Database, DatabaseBackend, DatabaseTransaction,
+    DbBackend, DbErr, ExecResult, FromQueryResult, IntoActiveModel, JoinType, NotSet, QueryOrder,
+    QuerySelect, QueryTrait, Set, Statement, StreamTrait, TransactionTrait, Unchanged, Values,
 };
 
 pub type DbResult<T> = Result<T, DbErr>;
@@ -282,7 +281,7 @@ where
     C: Into<ConditionExpression>,
 {
     Condition::any()
-        .add(Expr::cust_with_values("1 = ?", vec![P::into(param)]))
+        .add(Expr::cust_with_values("0 = ?", [P::into(param)]))
         .add(C::into(condition))
 }
 
@@ -307,8 +306,7 @@ impl QueryHelper {
         let mut order_fields: Vec<OrderByField> = vec![];
 
         if let Some(Json::String(order_by)) = order_by {
-            let re =
-                Regex::new(r"\b\s*([[:word:]]+)\s*((?i:ASC|DESC)?)\s*\b(?:,|;|$)").unwrap();
+            let re = Regex::new(r"\b\s*([[:word:]]+)\s*((?i:ASC|DESC)?)\s*\b(?:,|;|$)").unwrap();
             for cap in re.captures_iter(order_by) {
                 order_fields.push(OrderByField {
                     field: cap[1].to_owned(),

@@ -12,7 +12,7 @@ default = ["minimal"]
 minimal = ["chrono", "collections", "derive", "memoffset", "once-cell", "ouroboros"]
 common = ["minimal", "async", "fs", "hashmap", "net", "ptr", "regex", "str", "sync",
           "with-bytes", "with-hex", "with-log", "with-rustls", "with-serde"]
-full = ["common", "db"]
+full = ["common", "db", "signal"]
 
 with-bytes = ["bytes", "bytestring", "zerocopy"]
 with-hex = ["hex", "hex-literal"]
