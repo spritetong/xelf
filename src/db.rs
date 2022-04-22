@@ -6,10 +6,14 @@ use orm_utils::*;
 
 pub use sea_orm::{
     entity::prelude::*,
-    sea_query::{ConditionExpression, Expr, Func, Query, SimpleExpr, SqlWriter},
+    sea_query::{
+        BinOper, ConditionExpression, Expr, Func, JoinOn, LogicalChainOper, Query, QueryBuilder,
+        SimpleExpr, SqlWriter, UnOper,
+    },
     Condition, ConnectOptions, ConnectionTrait, Database, DatabaseBackend, DatabaseTransaction,
     DbBackend, DbErr, ExecResult, FromQueryResult, IntoActiveModel, JoinType, NotSet, QueryOrder,
-    QuerySelect, QueryTrait, Set, Statement, StreamTrait, TransactionTrait, Unchanged, Values,
+    QuerySelect, QueryTrait, SelectGetableValue, SelectModel, SelectorRaw, Set, Statement,
+    StreamTrait, TransactionTrait, Unchanged, Values,
 };
 
 pub type DbResult<T> = Result<T, DbErr>;
@@ -80,6 +84,30 @@ where
 
 ////////////////////////////////////////////////////////////////////////////////
 
+pub struct RawSqlBuilder {
+    builder: Box<dyn QueryBuilder>,
+    writer: SqlWriter,
+    values: Vec<Value>,
+}
+
+impl RawSqlBuilder {
+    pub fn new(backend: DbBackend) -> Self {
+        Self {
+            builder: backend.get_query_builder(),
+            writer: SqlWriter::new(),
+            values: Vec::new(),
+        }
+    }
+
+    pub fn write_expr(&mut self, expr: &SimpleExpr) {
+        let mut collector = |x| self.values.push(x);
+        self.builder
+            .prepare_simple_expr(expr, &mut self.writer, &mut collector);
+    }
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
 type ParamIndices = smallvec::SmallVec<[u16; 4]>;
 type ParamMap = LinkedHashMap<ByteString, ParamIndices>;
 
@@ -94,6 +122,32 @@ pub struct SqlHelper {
 impl SqlHelper {
     pub fn into_statement(self) -> Statement {
         self.statement
+    }
+
+    pub fn into_select<E>(self) -> SelectorRaw<SelectModel<E::Model>>
+    where
+        E: EntityTrait,
+    {
+        E::find().from_raw_sql(self.into())
+    }
+
+    pub fn into_model<M>(self) -> SelectorRaw<SelectModel<M>>
+    where
+        M: FromQueryResult,
+    {
+        M::find_by_statement(self.into())
+    }
+
+    pub fn into_json(self) -> SelectorRaw<SelectModel<Json>> {
+        SelectorRaw::<SelectModel<Json>>::from_statement::<Json>(self.into())
+    }
+
+    pub fn into_values<T, C>(self) -> SelectorRaw<SelectGetableValue<T, C>>
+    where
+        T: sea_orm::TryGetableMany,
+        C: sea_orm::Iterable + sea_orm::strum::IntoEnumIterator + Iden,
+    {
+        SelectorRaw::<SelectGetableValue<T, C>>::with_columns::<T, C>(self.into())
     }
 
     pub fn iter_params(&self) -> SqlParamIterator {

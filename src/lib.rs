@@ -75,7 +75,7 @@ pub mod prelude {
         cmp::{max, min},
         convert::{self, AsMut, AsRef, From, Into, TryFrom, TryInto},
         env,
-        fmt::{self, Display, Write as _},
+        fmt::{self, Display, Write as FmtWrite},
         iter,
         ops::{self, *},
         rc::Rc,
