@@ -85,18 +85,44 @@ where
 ////////////////////////////////////////////////////////////////////////////////
 
 pub struct RawSqlBuilder {
+    db_backend: DbBackend,
     builder: Box<dyn QueryBuilder>,
     writer: SqlWriter,
     values: Vec<Value>,
 }
 
 impl RawSqlBuilder {
-    pub fn new(backend: DbBackend) -> Self {
+    pub fn new(db_backend: DbBackend) -> Self {
         Self {
-            builder: backend.get_query_builder(),
+            db_backend,
+            builder: db_backend.get_query_builder(),
             writer: SqlWriter::new(),
             values: Vec::new(),
         }
+    }
+
+    pub fn into_statement(self) -> Statement {
+        let Self {
+            db_backend,
+            writer,
+            values,
+            ..
+        } = self;
+
+        Statement {
+            sql: writer.result(),
+            values: Some(Values(values)),
+            db_backend,
+        }
+    }
+
+    pub fn into_sql_helper(self) -> Statement {
+        self.into_statement().into()
+    }
+
+    #[inline]
+    pub fn get_database_backend(&self) -> DbBackend {
+        self.db_backend
     }
 
     pub fn write_expr(&mut self, expr: &SimpleExpr) {
@@ -104,11 +130,41 @@ impl RawSqlBuilder {
         self.builder
             .prepare_simple_expr(expr, &mut self.writer, &mut collector);
     }
+
+    pub fn write(&mut self, s: &str) {
+        self.write_expr(&Expr::cust(s));
+    }
+
+    pub fn write_with_args<V, I>(&mut self, s: &str, v: I)
+    where
+        V: Into<Value>,
+        I: IntoIterator<Item = V>,
+    {
+        self.write_expr(&Expr::cust_with_values(s, v));
+    }
+
+    pub fn expr_to_string(db_backend: DbBackend, expr: &SimpleExpr) -> String {
+        let mut w = RawSqlBuilder::new(db_backend);
+        w.write_expr(expr);
+        w.into_statement().to_string()
+    }
+}
+
+impl Into<Statement> for RawSqlBuilder {
+    fn into(self) -> Statement {
+        self.into_statement()
+    }
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-type ParamIndices = smallvec::SmallVec<[u16; 4]>;
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+enum ParamIndex {
+    Sql(u32),
+    Value(u32),
+}
+
+type ParamIndices = smallvec::SmallVec<[ParamIndex; 4]>;
 type ParamMap = LinkedHashMap<ByteString, ParamIndices>;
 
 #[derive(Deref, DerefMut, Clone, Debug)]
@@ -116,12 +172,27 @@ pub struct SqlHelper {
     #[deref]
     #[deref_mut]
     statement: Statement,
+    sql_slices: Vec<ByteString>,
     params: Arc<ParamMap>,
 }
 
 impl SqlHelper {
     pub fn into_statement(self) -> Statement {
-        self.statement
+        let Self {
+            mut statement,
+            sql_slices,
+            ..
+        } = self;
+
+        if !sql_slices.is_empty() {
+            let len = sql_slices.iter().fold(0usize, |n, x| n + x.len());
+            statement.sql.clear();
+            statement.sql.reserve(len);
+            sql_slices
+                .iter()
+                .for_each(|x| statement.sql.write_str(x.deref()).unwrap());
+        }
+        statement
     }
 
     pub fn into_select<E>(self) -> SelectorRaw<SelectModel<E::Model>>
@@ -160,14 +231,24 @@ impl SqlHelper {
     }
 
     pub fn bind_param<N: AsRef<str>, V: Into<Value>>(&mut self, name: N, value: V) -> &mut Self {
-        let indices = self.params.get(name.as_ref()).unwrap();
         let value = value.into();
-        if let Some(ref mut values) = self.statement.values {
-            if indices.len() == 1 {
-                values.0[*indices.first().unwrap() as usize] = value;
-            } else {
-                for &i in indices {
-                    values.0[i as usize] = value.clone();
+        for &idx in self.params.get(name.as_ref()).unwrap() {
+            match idx {
+                ParamIndex::Value(i) => {
+                    if let Some(ref mut values) = self.statement.values {
+                        values.0[i as usize] = value.clone();
+                    }
+                }
+                ParamIndex::Sql(i) => {
+                    if let Value::String(Some(s)) = &value {
+                        self.sql_slices[i as usize] = s.deref().clone().into();
+                    } else {
+                        panic!(
+                            "Can not set the SQL slice \"{}\" as {:?}",
+                            name.as_ref(),
+                            &value
+                        );
+                    }
                 }
             }
         }
@@ -178,30 +259,67 @@ impl SqlHelper {
     pub fn bind_optional<N: AsRef<str>>(&mut self, name: N, optional: bool) -> &mut Self {
         self.bind_param(name, optional as i32)
     }
+
+    #[inline]
+    pub fn expr_to_string(&self, expr: &SimpleExpr) -> String {
+        RawSqlBuilder::expr_to_string(self.statement.db_backend, expr)
+    }
 }
 
 impl From<Statement> for SqlHelper {
     fn from(statement: Statement) -> Self {
         let mut params = ParamMap::new();
+        let mut sql_slices = Vec::new();
+
+        // Get value indices.
         if let Some(values) = &statement.values {
             for (index, param) in values.iter().enumerate() {
                 if let Value::String(Some(name)) = param {
                     if name.starts_with(':') {
-                        match params.get_mut(name.as_str()) {
-                            Some(v) => v.push(index as u16),
-                            _ => {
-                                let mut indices = ParamIndices::new();
-                                indices.push(index as u16);
-                                params.insert(name.deref().clone().into(), indices);
-                            }
-                        }
+                        params
+                            .raw_entry_mut()
+                            .from_key(name.as_str())
+                            .or_insert_with(|| (name.deref().clone().into(), ParamIndices::new()))
+                            .1
+                            .push(ParamIndex::Value(index as u32));
                     }
                 }
             }
         }
+
+        // Get SQL block indices.
+        let sql = statement.sql.as_str();
+        let mut left = sql.as_bytes();
+        let _ = shellexpand::env_with_context_no_errors::<str, &str, _>(sql, |name| {
+            if name.starts_with(':') {
+                let (a, b) = left.split_at((name.as_ptr() as usize) - (left.as_ptr() as usize) - 2);
+                // Push SQL text before the parameter.
+                sql_slices.push(unsafe { mem::transmute::<_, &str>(a).to_owned().into() });
+
+                let (a, b) = b.split_at(name.len() + 3);
+                // Push the parameter: ${<name>}
+                sql_slices.push(unsafe { mem::transmute::<_, &str>(a).to_owned().into() });
+
+                // Save the left slice.
+                left = b;
+
+                params
+                    .raw_entry_mut()
+                    .from_key(name)
+                    .or_insert_with(|| (name.deref().clone().into(), ParamIndices::new()))
+                    .1
+                    .push(ParamIndex::Sql((sql_slices.len() - 1) as u32));
+            }
+            None
+        });
+        if !sql_slices.is_empty() {
+            sql_slices.push(unsafe { mem::transmute::<_, &str>(left).to_owned().into() });
+        }
+
         //println!("{:?} {:?}", &statement, &params);
         Self {
             statement,
+            sql_slices,
             params: Arc::new(params),
         }
     }
@@ -209,7 +327,13 @@ impl From<Statement> for SqlHelper {
 
 impl Into<Statement> for SqlHelper {
     fn into(self) -> Statement {
-        self.statement
+        self.into_statement()
+    }
+}
+
+impl From<RawSqlBuilder> for SqlHelper {
+    fn from(builder: RawSqlBuilder) -> Self {
+        Into::<Statement>::into(builder).into()
     }
 }
 
@@ -469,5 +593,39 @@ impl QueryHelper {
     {
         let mut helper = Self::new(args.get("order_by$"), wrapper_funcs);
         helper.query(entity, select, args.get("after$"), id_field)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_sql_helper() {
+        let mut w = RawSqlBuilder::new(DbBackend::Postgres);
+        w.write("SELECT * FROM t_user\n");
+        w.write_with_args("WHERE name = ?\n", [":name"]);
+        w.write("${:order_by}\n");
+        w.write("${:limit}\n");
+        w.write("${:order_by}\n");
+        w.write("FOR UPDATE");
+
+        let mut q = SqlHelper::from(w);
+        q.bind_param(":name", "Tom");
+        q.bind_param(":order_by", "ORDER BY name");
+        q.bind_param(":limit", "LIMIT 100");
+
+        let a = Expr::expr(Expr::cust("A")).is_in(["1", "2", "3"]);
+        println!("{}", q.expr_to_string(&a));
+        let a = Expr::expr(Expr::cust("A")).is_in([Utc::now()]);
+        println!("{}", q.expr_to_string(&a));
+
+        let statement = q.into_statement();
+        println!("{:?}", &statement);
+
+        assert_eq!(
+            &statement.sql,
+            "SELECT * FROM t_user\nWHERE name = $1\nORDER BY name\nLIMIT 100\nORDER BY name\nFOR UPDATE"
+        );
     }
 }

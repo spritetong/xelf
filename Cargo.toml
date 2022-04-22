@@ -24,7 +24,7 @@ async = ["async-stream", "async-trait", "flume", "futures", "futures-util",
 	"mio", "pin-project", "tokio", "tokio-stream"]
 collections = ["maplit", "smallvec", "vec"]
 db = ["async", "chrono", "collections", "hashmap", "ouroboros", "rust-decimal",
-    "sea-orm", "sqlx", "with-bytes", "with-serde"]
+    "sea-orm", "shellexpand", "sqlx", "with-bytes", "with-serde"]
 derive = ["derive-more", "num-enum", "smart-default", "strum"]
 fs = ["tempfile"]
 hashmap = ["ahash", "ritelinked", "maplit"]
@@ -56,6 +56,7 @@ strum = { version = "^0.24", features = ["derive"], optional = true }
 dotenv = { version = "^0.15", optional = true }
 env-logger = { version = "^0.9", package = "env_logger", optional = true }
 log = { version = "^0.4", optional = true }
+shellexpand = { version = "^2.1", optional = true }
 
 async-stream = { version = "^0.3", optional = true }
 async-trait = { version = "^0.1", optional = true }

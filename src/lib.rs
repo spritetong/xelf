@@ -207,6 +207,9 @@ pub mod prelude {
     #[cfg(feature = "serde-repr")]
     pub use ::serde_repr::{self, Deserialize_repr, Serialize_repr};
 
+    #[cfg(feature = "shellexpand")]
+    pub use ::shellexpand;
+
     #[cfg(feature = "tempfile")]
     pub use ::tempfile::{self, NamedTempFile, TempDir, TempPath};
 
