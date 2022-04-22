@@ -116,7 +116,7 @@ impl RawSqlBuilder {
         }
     }
 
-    pub fn into_sql_helper(self) -> Statement {
+    pub fn into_sql_helper(self) -> SqlHelper {
         self.into_statement().into()
     }
 
