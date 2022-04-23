@@ -120,6 +120,32 @@ impl RawSqlBuilder {
         self.into_statement().into()
     }
 
+    pub fn into_select<E>(self) -> SelectorRaw<SelectModel<E::Model>>
+    where
+        E: EntityTrait,
+    {
+        E::find().from_raw_sql(self.into())
+    }
+
+    pub fn into_model<M>(self) -> SelectorRaw<SelectModel<M>>
+    where
+        M: FromQueryResult,
+    {
+        M::find_by_statement(self.into())
+    }
+
+    pub fn into_json(self) -> SelectorRaw<SelectModel<Json>> {
+        SelectorRaw::<SelectModel<Json>>::from_statement::<Json>(self.into())
+    }
+
+    pub fn into_values<T, C>(self) -> SelectorRaw<SelectGetableValue<T, C>>
+    where
+        T: sea_orm::TryGetableMany,
+        C: sea_orm::Iterable + sea_orm::strum::IntoEnumIterator + Iden,
+    {
+        SelectorRaw::<SelectGetableValue<T, C>>::with_columns::<T, C>(self.into())
+    }
+
     #[inline]
     pub fn get_database_backend(&self) -> DbBackend {
         self.db_backend
