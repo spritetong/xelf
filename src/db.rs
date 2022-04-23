@@ -7,13 +7,13 @@ use orm_utils::*;
 pub use sea_orm::{
     entity::prelude::*,
     sea_query::{
-        BinOper, ConditionExpression, Expr, Func, JoinOn, LogicalChainOper, Query, QueryBuilder,
-        SimpleExpr, SqlWriter, UnOper,
+        BinOper, ConditionExpression, DynIden, Expr, Func, IntoIden, JoinOn, LogicalChainOper,
+        Query, QueryBuilder, SimpleExpr, SqlWriter, UnOper,
     },
     Condition, ConnectOptions, ConnectionTrait, Database, DatabaseBackend, DatabaseTransaction,
-    DbBackend, DbErr, ExecResult, FromQueryResult, IntoActiveModel, JoinType, NotSet, QueryOrder,
-    QuerySelect, QueryTrait, SelectGetableValue, SelectModel, SelectorRaw, Set, Statement,
-    StreamTrait, TransactionTrait, Unchanged, Values,
+    DbBackend, DbErr, ExecResult, FromQueryResult, IntoActiveModel, JoinType, NotSet, Order,
+    QueryOrder, QuerySelect, QueryTrait, SelectGetableValue, SelectModel, SelectorRaw, Set,
+    Statement, StreamTrait, TransactionTrait, Unchanged, Values,
 };
 
 pub type DbResult<T> = Result<T, DbErr>;
@@ -469,24 +469,50 @@ struct OrderByField {
     field: String,
     asc: bool,
     wrapper_func: IdenStr<ByteString>,
+    aggregate_func: IdenStr<ByteString>,
 }
 
 pub struct QueryHelper {
-    order_fields: Vec<OrderByField>,
+    entity: DynIden,
+    id_field: String,
+    order_by: Vec<OrderByField>,
 }
 
 impl QueryHelper {
-    pub fn new<C, F>(order_by: Option<&Json>, wrapper_funcs: Option<&BTreeMap<C, F>>) -> Self
+    pub fn new<T>(entity: T) -> Self
     where
-        C: Ord + Borrow<str>,
-        F: Ord + AsRef<str>,
+        T: IntoIden,
     {
-        let mut order_fields: Vec<OrderByField> = vec![];
+        Self {
+            entity: entity.into_iden(),
+            id_field: "id".to_owned(),
+            order_by: Vec::new(),
+        }
+    }
 
+    pub fn set_id_field<T>(&mut self, id_field: T) -> &mut Self
+    where
+        T: AsRef<str>,
+    {
+        self.id_field = id_field.as_ref().to_owned();
+        self
+    }
+
+    pub fn set_order_by<C, F>(
+        &mut self,
+        order_by: Option<&Json>,
+        wrapper_funcs: Option<&HashMap<C, F>>,
+        aggregate_funcs: Option<&HashMap<C, F>>,
+    ) -> &mut Self
+    where
+        C: Hash + Eq + Borrow<str>,
+        F: Hash + Eq + AsRef<str>,
+    {
+        self.order_by.clear();
         if let Some(Json::String(order_by)) = order_by {
             let re = Regex::new(r"\b\s*([[:word:]]+)\s*((?i:ASC|DESC)?)\s*\b(?:,|;|$)").unwrap();
             for cap in re.captures_iter(order_by) {
-                order_fields.push(OrderByField {
+                self.order_by.push(OrderByField {
                     field: cap[1].to_owned(),
                     asc: cap[2].to_ascii_uppercase() != "DESC",
                     wrapper_func: IdenStr(
@@ -495,49 +521,48 @@ impl QueryHelper {
                             .unwrap_or_else(|| String::new())
                             .into(),
                     ),
+                    aggregate_func: IdenStr(
+                        aggregate_funcs
+                            .and_then(|x| x.get(&cap[1]).map(|x| x.as_ref().to_owned()))
+                            .unwrap_or_else(|| String::new())
+                            .into(),
+                    ),
                 });
             }
         }
-
-        Self { order_fields }
+        self
     }
 
-    pub fn query<E, M>(
-        &mut self,
-        entity: E,
-        mut select: Select<E>,
-        after: Option<&Json>,
-        id_field: Option<&str>,
-    ) -> Select<E>
+    pub fn write_filters<E>(&self, after: Option<&Json>, writer: &mut dyn FnMut(SimpleExpr))
     where
-        E: EntityTrait<Model = M> + sea_orm::sea_query::IntoIden,
-        M: ModelTrait<Entity = E> + Default + OrmModelExt,
+        E: EntityTrait,
+        E::Model: Default + OrmModelExt,
     {
+        // filters
         if let Some(jsn @ &Json::Object(_)) = after {
-            let mut model = M::default();
+            let mut model = E::Model::default();
             if model.update_by_json(jsn, &None::<&str>).is_ok() {
                 // "<id_field>" <> after.<id_field>
-                let id_field = id_field.unwrap_or("id");
-                let id_col_name = id_field
+                let id_col_name = self
+                    .id_field
                     .split('.')
                     .into_iter()
                     .rev()
                     .next()
-                    .unwrap_or(id_field);
+                    .unwrap_or(self.id_field.as_str());
                 if let Ok(id_col) = E::Column::from_str(id_col_name) {
                     let after_id = model.get(id_col);
                     if !sea_orm::sea_query::sea_value_to_json_value(&after_id).is_null() {
-                        select =
-                            QueryFilter::filter(select, Expr::tbl(entity, id_col).ne(after_id));
+                        writer(Expr::tbl(self.entity.clone(), id_col).ne(after_id));
                     }
                 }
 
-                for pat in self.order_fields.iter() {
+                for pat in self.order_by.iter() {
                     if let Ok(col) = E::Column::from_str(&pat.field) {
                         match jsn.get(&pat.field) {
                             None | Some(Json::Null) => (),
                             _ => {
-                                let mut field = Expr::tbl(entity, col);
+                                let mut field = Expr::tbl(self.entity.clone(), col);
                                 let mut value = Expr::val(model.get(col));
                                 if !pat.wrapper_func.is_empty() {
                                     field = Expr::expr(
@@ -548,11 +573,9 @@ impl QueryHelper {
                                     )
                                 }
                                 if pat.asc {
-                                    select =
-                                        QueryFilter::filter(select, field.greater_or_equal(value));
+                                    writer(field.greater_or_equal(value));
                                 } else {
-                                    select =
-                                        QueryFilter::filter(select, field.less_or_equal(value));
+                                    writer(field.less_or_equal(value));
                                 }
                             }
                         }
@@ -560,39 +583,83 @@ impl QueryHelper {
                 }
             }
         }
+    }
 
-        for pat in self.order_fields.iter() {
+    pub fn write_order_by<E>(&self, writer: &mut dyn FnMut(SimpleExpr, Order))
+    where
+        E: EntityTrait,
+    {
+        for pat in self.order_by.iter() {
             if let Ok(col) = E::Column::from_str(&pat.field) {
-                let mut field = Expr::tbl(entity, col).into_simple_expr();
+                let mut field = Expr::tbl(self.entity.clone(), col).into_simple_expr();
                 if !pat.wrapper_func.is_empty() {
                     field = Func::cust(pat.wrapper_func.clone()).args([field]);
                 }
+                if !pat.aggregate_func.is_empty() {
+                    field = Func::cust(pat.aggregate_func.clone()).args([field]);
+                }
                 if pat.asc {
-                    select = select.order_by_asc(field);
+                    writer(field, Order::Asc);
                 } else {
-                    select = select.order_by_desc(field);
+                    writer(field, Order::Desc);
                 }
             }
         }
-
-        select
     }
 
-    pub fn query_with_args<E, M, C, F>(
-        entity: E,
-        select: Select<E>,
-        args: &JsonMap,
-        id_field: Option<&str>,
-        wrapper_funcs: Option<&BTreeMap<C, F>>,
-    ) -> Select<E>
+    pub fn select_filters<E>(&self, select: Select<E>, after: Option<&Json>) -> Select<E>
     where
-        E: EntityTrait<Model = M> + sea_orm::sea_query::IntoIden,
-        M: ModelTrait<Entity = E> + Default + OrmModelExt,
-        C: Ord + Borrow<str>,
-        F: Ord + AsRef<str>,
+        E: EntityTrait,
+        E::Model: Default + OrmModelExt,
     {
-        let mut helper = Self::new(args.get("order_by$"), wrapper_funcs);
-        helper.query(entity, select, args.get("after$"), id_field)
+        let mut select = Some(select);
+        let mut writer = |x| {
+            select = Some(Option::take(&mut select).unwrap().filter(x));
+        };
+        self.write_filters::<E>(after, &mut writer);
+        select.unwrap()
+    }
+
+    pub fn select_order_by<E>(&self, select: Select<E>) -> Select<E>
+    where
+        E: EntityTrait,
+    {
+        let mut select = Some(select);
+        let mut writer = |x, order| {
+            select = Some(Option::take(&mut select).unwrap().order_by(x, order));
+        };
+        self.write_order_by::<E>(&mut writer);
+        select.unwrap()
+    }
+
+    pub fn raw_sql_filters<E>(&self, builder: &mut RawSqlBuilder, after: Option<&Json>)
+    where
+        E: EntityTrait,
+        E::Model: Default + OrmModelExt,
+    {
+        let mut writer = |x| {
+            builder.write(" AND ");
+            builder.write_expr(&x);
+        };
+        self.write_filters::<E>(after, &mut writer);
+    }
+
+    pub fn raw_sql_order_by<E>(&self, builder: &mut RawSqlBuilder)
+    where
+        E: EntityTrait,
+    {
+        let mut sep = " ORDER BY ";
+        let mut writer = |x, order| {
+            builder.write(sep);
+            builder.write_expr(&x);
+            match order {
+                Order::Asc => builder.write(" ASC"),
+                Order::Desc => builder.write(" DESC"),
+                _ => (),
+            }
+            sep = ", "
+        };
+        self.write_order_by::<E>(&mut writer);
     }
 }
 
