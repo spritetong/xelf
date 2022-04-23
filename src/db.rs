@@ -84,6 +84,110 @@ where
 
 ////////////////////////////////////////////////////////////////////////////////
 
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+pub enum DbLockMode {
+    /// Protects a table from concurrent data changes. (SQLite: BEGIN)
+    Share,
+    /// Do not allow other data changes. (SQLite: BEGIN IMMEDIATE)
+    Exclusive,
+    /// Do not allow any other access. (SQLite: BEGIN EXCLUSIVE)
+    AccessExclusive,
+}
+
+#[derive(Clone, Deref, Debug)]
+pub struct IdenStr<T: AsRef<str> + Clone + Send + Sync>(pub T);
+
+impl<T: AsRef<str> + Clone + Send + Sync> Iden for IdenStr<T> {
+    fn unquoted(&self, s: &mut dyn std::fmt::Write) {
+        let _ = s.write_str(self.0.as_ref());
+    }
+}
+
+#[async_trait]
+pub trait DbConnExt: ConnectionTrait {
+    fn builtin_func(&self, name: &str) -> &'static str {
+        match self.get_database_backend() {
+            DbBackend::Postgres => match name {
+                "now()" => return "now()",
+                "least" => return "least",
+                "greatest" => return "greatest",
+                "upper" => return "upper",
+                "lower" => return "lower",
+                _ => (),
+            },
+            DbBackend::Sqlite => match name {
+                "now()" => return "strftime('%Y-%m-%d %H:%M:%f000000', DATETIME('now'))",
+                "least" => return "min",
+                "greatest" => return "max",
+                "upper" => return "upper",
+                "lower" => return "lower",
+                _ => (),
+            },
+            _ => (),
+        }
+
+        panic!(
+            "No built-in function {} for {:?}",
+            name,
+            self.get_database_backend()
+        );
+    }
+
+    fn func(&self, name: &str) -> SimpleExpr {
+        Expr::cust(self.builtin_func(name))
+    }
+
+    fn func_unary<T>(&self, name: &str, arg: T) -> SimpleExpr
+    where
+        T: Into<SimpleExpr>,
+    {
+        Func::cust(IdenStr(self.builtin_func(name))).args(vec![T::into(arg)])
+    }
+
+    fn func_with_args<T, I>(&self, name: &str, args: I) -> SimpleExpr
+    where
+        T: Into<SimpleExpr>,
+        I: IntoIterator<Item = T>,
+    {
+        Func::cust(IdenStr(self.builtin_func(name))).args(args)
+    }
+
+    async fn lock_table(&self, table: &str, mode: DbLockMode) -> DbResult<()> {
+        match self.get_database_backend() {
+            DbBackend::Postgres => {
+                if !table.is_empty() {
+                    let mode = match mode {
+                        DbLockMode::Share => "SHARE",
+                        DbLockMode::Exclusive => "EXCLUSIVE",
+                        DbLockMode::AccessExclusive => "ACCESS EXCLUSIVE",
+                    };
+                    let sql = format!("LOCK TABLE {} IN {} MODE;", table, mode);
+                    self.execute(Statement::from_string(self.get_database_backend(), sql))
+                        .await?;
+                }
+            }
+            DbBackend::Sqlite => (),
+            _ => return Err(DbErr::Custom("no implementation".to_owned())),
+        }
+        Ok(())
+    }
+}
+
+#[async_trait]
+impl<C: ConnectionTrait> DbConnExt for C {}
+
+pub fn db_optional<P, C>(param: P, condition: C) -> Condition
+where
+    P: Into<Value>,
+    C: Into<ConditionExpression>,
+{
+    Condition::any()
+        .add(Expr::cust_with_values("0 = ?", [P::into(param)]))
+        .add(C::into(condition))
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
 pub struct RawSqlBuilder {
     db_backend: DbBackend,
     builder: Box<dyn QueryBuilder>,
@@ -179,6 +283,16 @@ impl RawSqlBuilder {
 impl Into<Statement> for RawSqlBuilder {
     fn into(self) -> Statement {
         self.into_statement()
+    }
+}
+
+impl fmt::Debug for RawSqlBuilder {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("RawSqlBuilder")
+            .field("db_backend", &self.db_backend)
+            .field("SQL", &self.writer)
+            .field("values", &self.values)
+            .finish()
     }
 }
 
@@ -383,110 +497,6 @@ impl Iterator for SqlParamIterator {
     fn size_hint(&self) -> (usize, Option<usize>) {
         self.borrow_it().size_hint()
     }
-}
-
-////////////////////////////////////////////////////////////////////////////////
-
-#[derive(Clone, Copy, PartialEq, Eq)]
-pub enum DbLockMode {
-    /// Protects a table from concurrent data changes. (SQLite: BEGIN)
-    Share,
-    /// Do not allow other data changes. (SQLite: BEGIN IMMEDIATE)
-    Exclusive,
-    /// Do not allow any other access. (SQLite: BEGIN EXCLUSIVE)
-    AccessExclusive,
-}
-
-#[derive(Clone, Deref, Debug)]
-pub struct IdenStr<T: AsRef<str> + Clone + Send + Sync>(pub T);
-
-impl<T: AsRef<str> + Clone + Send + Sync> Iden for IdenStr<T> {
-    fn unquoted(&self, s: &mut dyn std::fmt::Write) {
-        let _ = s.write_str(self.0.as_ref());
-    }
-}
-
-#[async_trait]
-pub trait DbConnExt: ConnectionTrait {
-    fn builtin_func(&self, name: &str) -> &'static str {
-        match self.get_database_backend() {
-            DbBackend::Postgres => match name {
-                "now()" => return "now()",
-                "least" => return "least",
-                "greatest" => return "greatest",
-                "upper" => return "upper",
-                "lower" => return "lower",
-                _ => (),
-            },
-            DbBackend::Sqlite => match name {
-                "now()" => return "strftime('%Y-%m-%d %H:%M:%f000000', DATETIME('now'))",
-                "least" => return "min",
-                "greatest" => return "max",
-                "upper" => return "upper",
-                "lower" => return "lower",
-                _ => (),
-            },
-            _ => (),
-        }
-
-        panic!(
-            "No built-in function {} for {:?}",
-            name,
-            self.get_database_backend()
-        );
-    }
-
-    fn func(&self, name: &str) -> SimpleExpr {
-        Expr::cust(self.builtin_func(name))
-    }
-
-    fn func_unary<T>(&self, name: &str, arg: T) -> SimpleExpr
-    where
-        T: Into<SimpleExpr>,
-    {
-        Func::cust(IdenStr(self.builtin_func(name))).args(vec![T::into(arg)])
-    }
-
-    fn func_with_args<T, I>(&self, name: &str, args: I) -> SimpleExpr
-    where
-        T: Into<SimpleExpr>,
-        I: IntoIterator<Item = T>,
-    {
-        Func::cust(IdenStr(self.builtin_func(name))).args(args)
-    }
-
-    async fn lock_table(&self, table: &str, mode: DbLockMode) -> DbResult<()> {
-        match self.get_database_backend() {
-            DbBackend::Postgres => {
-                if !table.is_empty() {
-                    let mode = match mode {
-                        DbLockMode::Share => "SHARE",
-                        DbLockMode::Exclusive => "EXCLUSIVE",
-                        DbLockMode::AccessExclusive => "ACCESS EXCLUSIVE",
-                    };
-                    let sql = format!("LOCK TABLE {} IN {} MODE;", table, mode);
-                    self.execute(Statement::from_string(self.get_database_backend(), sql))
-                        .await?;
-                }
-            }
-            DbBackend::Sqlite => (),
-            _ => return Err(DbErr::Custom("no implementation".to_owned())),
-        }
-        Ok(())
-    }
-}
-
-#[async_trait]
-impl<C: ConnectionTrait> DbConnExt for C {}
-
-pub fn db_optional<P, C>(param: P, condition: C) -> Condition
-where
-    P: Into<Value>,
-    C: Into<ConditionExpression>,
-{
-    Condition::any()
-        .add(Expr::cust_with_values("0 = ?", [P::into(param)]))
-        .add(C::into(condition))
 }
 
 ////////////////////////////////////////////////////////////////////////////////
