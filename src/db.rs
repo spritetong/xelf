@@ -12,8 +12,8 @@ pub use sea_orm::{
     },
     Condition, ConnectOptions, ConnectionTrait, Database, DatabaseBackend, DatabaseTransaction,
     DbBackend, DbErr, ExecResult, FromQueryResult, IntoActiveModel, JoinType, NotSet, Order,
-    QueryOrder, QuerySelect, QueryTrait, SelectGetableValue, SelectModel, SelectorRaw, Set,
-    Statement, StreamTrait, TransactionTrait, Unchanged, Values,
+    QueryOrder, QuerySelect, QueryTrait, SelectGetableValue, SelectModel, SelectTwoModel,
+    SelectorRaw, Set, Statement, StreamTrait, TransactionTrait, Unchanged, Values,
 };
 
 pub type DbResult<T> = Result<T, DbErr>;
@@ -224,18 +224,20 @@ impl RawSqlBuilder {
         self.into_statement().into()
     }
 
-    pub fn into_select<E>(self) -> SelectorRaw<SelectModel<E::Model>>
-    where
-        E: EntityTrait,
-    {
-        E::find().from_raw_sql(self.into())
-    }
-
-    pub fn into_model<M>(self) -> SelectorRaw<SelectModel<M>>
+    pub fn into_select<M>(self) -> SelectorRaw<SelectModel<M>>
     where
         M: FromQueryResult,
     {
         M::find_by_statement(self.into())
+    }
+
+    pub fn into_select_tow<M, N>(self) -> SelectorRaw<SelectTwoModel<M, N>>
+    where
+        M: FromQueryResult,
+        N: FromQueryResult,
+    {
+        // FIXME: There's no safe methods to transmute Statement into SelectorRaw<SelectTwoModel>.
+        unsafe { mem::transmute(self.into_statement()) }
     }
 
     pub fn into_json(self) -> SelectorRaw<SelectModel<Json>> {
@@ -335,18 +337,20 @@ impl SqlHelper {
         statement
     }
 
-    pub fn into_select<E>(self) -> SelectorRaw<SelectModel<E::Model>>
-    where
-        E: EntityTrait,
-    {
-        E::find().from_raw_sql(self.into())
-    }
-
-    pub fn into_model<M>(self) -> SelectorRaw<SelectModel<M>>
+    pub fn into_select<M>(self) -> SelectorRaw<SelectModel<M>>
     where
         M: FromQueryResult,
     {
         M::find_by_statement(self.into())
+    }
+
+    pub fn into_select_tow<M, N>(self) -> SelectorRaw<SelectTwoModel<M, N>>
+    where
+        M: FromQueryResult,
+        N: FromQueryResult,
+    {
+        // FIXME: There's no safe methods to transmute Statement into SelectorRaw<SelectTwoModel>.
+        unsafe { mem::transmute(self.into_statement()) }
     }
 
     pub fn into_json(self) -> SelectorRaw<SelectModel<Json>> {
