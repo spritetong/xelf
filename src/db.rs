@@ -231,7 +231,7 @@ impl RawSqlBuilder {
         M::find_by_statement(self.into())
     }
 
-    pub fn into_select_tow<M, N>(self) -> SelectorRaw<SelectTwoModel<M, N>>
+    pub fn into_select_two<M, N>(self) -> SelectorRaw<SelectTwoModel<M, N>>
     where
         M: FromQueryResult,
         N: FromQueryResult,
@@ -344,7 +344,7 @@ impl SqlHelper {
         M::find_by_statement(self.into())
     }
 
-    pub fn into_select_tow<M, N>(self) -> SelectorRaw<SelectTwoModel<M, N>>
+    pub fn into_select_two<M, N>(self) -> SelectorRaw<SelectTwoModel<M, N>>
     where
         M: FromQueryResult,
         N: FromQueryResult,
