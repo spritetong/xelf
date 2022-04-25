@@ -13,7 +13,7 @@ pub use sea_orm::{
     Condition, ConnectOptions, ConnectionTrait, Database, DatabaseBackend, DatabaseTransaction,
     DbBackend, DbErr, ExecResult, FromQueryResult, IntoActiveModel, JoinType, NotSet, Order,
     QueryOrder, QuerySelect, QueryTrait, SelectGetableValue, SelectModel, SelectTwoModel,
-    SelectorRaw, Set, Statement, StreamTrait, TransactionTrait, Unchanged, Values,
+    SelectorRaw, Set, Statement, StreamTrait, TransactionTrait, Unchanged, Values, ActiveValue
 };
 
 pub type DbResult<T> = Result<T, DbErr>;
@@ -236,7 +236,7 @@ impl RawSqlBuilder {
         M: FromQueryResult,
         N: FromQueryResult,
     {
-        // FIXME: There's no safe methods to transmute Statement into SelectorRaw<SelectTwoModel>.
+        // TODO: There's no safe methods to transmute Statement into SelectorRaw<SelectTwoModel>.
         unsafe { mem::transmute(self.into_statement()) }
     }
 
@@ -349,7 +349,7 @@ impl SqlHelper {
         M: FromQueryResult,
         N: FromQueryResult,
     {
-        // FIXME: There's no safe methods to transmute Statement into SelectorRaw<SelectTwoModel>.
+        // TODO: There's no safe methods to transmute Statement into SelectorRaw<SelectTwoModel>.
         unsafe { mem::transmute(self.into_statement()) }
     }
 

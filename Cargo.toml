@@ -9,7 +9,7 @@ path = "src/lib.rs"
 
 [features]
 default = ["minimal"]
-minimal = ["chrono", "collections", "derive", "memoffset", "once-cell", "ouroboros"]
+minimal = ["datetime", "collections", "derive", "memoffset", "once-cell", "ouroboros"]
 common = ["minimal", "async", "fs", "hashmap", "net", "ptr", "regex", "str", "sync",
           "with-bytes", "with-hex", "with-log", "with-rustls", "with-serde"]
 full = ["common", "db", "signal"]
@@ -17,13 +17,14 @@ full = ["common", "db", "signal"]
 with-bytes = ["bytes", "bytestring", "zerocopy"]
 with-hex = ["hex", "hex-literal"]
 with-log = ["log", "env-logger", "dotenv"]
-with-serde = ["serde", "serde-repr", "json"]
+with-serde = ["json", "num", "serde", "serde-repr"]
 with-rustls = ["rustls", "rustls-pemfile"]
 
 async = ["async-stream", "async-trait", "flume", "futures", "futures-util",
 	"mio", "pin-project", "tokio", "tokio-stream"]
 collections = ["maplit", "smallvec", "vec"]
-db = ["async", "chrono", "collections", "hashmap", "ouroboros", "rust-decimal",
+datetime = ["chrono", "num", "serde"]
+db = ["async", "collections", "datetime", "hashmap", "ouroboros", "rust-decimal",
     "sea-orm", "shellexpand", "sqlx", "with-bytes", "with-serde"]
 derive = ["derive-more", "num-enum", "smart-default", "strum"]
 fs = ["tempfile"]

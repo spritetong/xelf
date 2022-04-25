@@ -1,5 +1,7 @@
 #[cfg(feature = "collections")]
 pub mod collections;
+#[cfg(feature = "datetime")]
+pub mod datetime;
 #[cfg(feature = "db")]
 pub mod db;
 #[cfg(feature = "json")]
@@ -40,6 +42,9 @@ pub mod prelude {
     pub use crate::collections::*;
     #[cfg(feature = "collections")]
     pub use ::std::collections::{self, BTreeMap, BTreeSet, HashMap, HashSet, VecDeque};
+
+    #[cfg(feature = "datetime")]
+    pub use crate::datetime::*;
 
     #[cfg(feature = "json")]
     pub use crate::json::*;
@@ -198,6 +203,7 @@ pub mod prelude {
     pub use ::serde::{
         self,
         de::{DeserializeOwned, Deserializer},
+        ser::Serializer,
         Deserialize, Serialize,
     };
     #[cfg(feature = "serde-json")]

@@ -37,7 +37,7 @@ impl<'de, T: Num> de::Visitor<'de> for DeNumVisitor<T> {
     }
 }
 
-/// Add function to serializing a string to an **`integer`**
+/// Function to deserializing a string to an **`integer`**
 pub fn de_x_num<'de, D, T>(deserializer: D) -> Result<T, D::Error>
 where
     D: de::Deserializer<'de>,
@@ -90,7 +90,7 @@ impl<'de, T: Float> de::Visitor<'de> for DeFloatVisitor<T> {
     }
 }
 
-/// Add function to serializing a string to an **`float`**
+/// Function to deserializing a string to an **`float`**
 pub fn de_x_float<'de, D, T>(deserializer: D) -> Result<T, D::Error>
 where
     D: de::Deserializer<'de>,
@@ -148,7 +148,7 @@ impl<'de> de::Visitor<'de> for DeBoolVisitor {
     }
 }
 
-/// Add function to serializing a string to a **`number`**
+/// Function to deserializing a string to a **`number`**
 pub fn de_x_bool<'de, D>(deserializer: D) -> Result<bool, D::Error>
 where
     D: de::Deserializer<'de>,
@@ -177,13 +177,7 @@ impl<'de, T: FromStr> de::Visitor<'de> for DeStringsVisitor<T> {
     }
 }
 
-pub fn de_x_strings<'de, D>(deserializer: D) -> Result<Vec<String>, D::Error>
-where
-    D: de::Deserializer<'de>,
-{
-    deserializer.deserialize_str(DeStringsVisitor::<String>(PhantomData))
-}
-
+/// Function to serializing a **`Vec<String>`** a simple string, the separator is ','
 pub fn ser_x_strings<S>(this: &Vec<String>, serializer: S) -> Result<S::Ok, S::Error>
 where
     S: ser::Serializer,
@@ -191,13 +185,18 @@ where
     serializer.serialize_str(this.join(", ").as_str())
 }
 
-pub fn de_x_vec<'de, D, T: FromStr>(deserializer: D) -> Result<Vec<T>, D::Error>
+/// Function to deserializing a simple string to a **`Vec<String>`**,
+/// the separator is ',', ';', or '\n'
+pub fn de_x_strings<'de, D>(deserializer: D) -> Result<Vec<String>, D::Error>
 where
     D: de::Deserializer<'de>,
 {
-    deserializer.deserialize_str(DeStringsVisitor::<T>(PhantomData))
+    deserializer.deserialize_str(DeStringsVisitor::<String>(PhantomData))
 }
 
+/// Function to serializing an object <T> to a simple string, the separator is ','
+/// 
+/// Usually type T is number.
 pub fn ser_x_vec<T: ToString, S>(this: &Vec<T>, serializer: S) -> Result<S::Ok, S::Error>
 where
     S: ser::Serializer,
@@ -209,4 +208,31 @@ where
             .join(", ")
             .as_str(),
     )
+}
+
+/// Function to deserializing a simple string to an object <T> a **`Vec<String>`**,
+/// the separator is ',', ';', or '\n'**`Vec<String>`**
+/// 
+/// Usually type T is number.
+pub fn de_x_vec<'de, D, T: FromStr>(deserializer: D) -> Result<Vec<T>, D::Error>
+where
+    D: de::Deserializer<'de>,
+{
+    deserializer.deserialize_str(DeStringsVisitor::<T>(PhantomData))
+}
+
+/// Module to serialize and deserialize a **`Vec<String>`** to/from a simple string,
+/// the separator is ',', ';', or '\n'**`Vec<String>`**
+pub mod serde_x_strings {
+    pub use super::ser_x_strings as serialize;
+    pub use super::de_x_strings as deserialize;
+}
+
+/// Module to serialize and deserialize a **`Vec<T>`** to/from a simple string,
+/// the separator is ',', ';', or '\n'**`Vec<String>`**
+/// 
+/// Usually type T is number.
+pub mod serde_x_vec {
+    pub use super::ser_x_vec as serialize;
+    pub use super::de_x_vec as deserialize;
 }
