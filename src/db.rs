@@ -1,8 +1,4 @@
-#[path = "orm_utils.rs"]
-mod orm_utils;
-
 use crate::prelude::*;
-use orm_utils::*;
 
 pub use sea_orm::{
     entity::prelude::*,
@@ -10,33 +6,33 @@ pub use sea_orm::{
         BinOper, ConditionExpression, DynIden, Expr, Func, IntoIden, JoinOn, LogicalChainOper,
         Query, QueryBuilder, SimpleExpr, SqlWriter, UnOper,
     },
-    Condition, ConnectOptions, ConnectionTrait, Database, DatabaseBackend, DatabaseTransaction,
-    DbBackend, DbErr, ExecResult, FromQueryResult, IntoActiveModel, JoinType, NotSet, Order,
-    QueryOrder, QuerySelect, QueryTrait, SelectGetableValue, SelectModel, SelectTwoModel,
-    SelectorRaw, Set, Statement, StreamTrait, TransactionTrait, Unchanged, Values, ActiveValue
+    ActiveValue, Condition, ConnectOptions, ConnectionTrait, Database, DatabaseBackend,
+    DatabaseTransaction, DbBackend, DbErr, ExecResult, FromQueryResult, IntoActiveModel, JoinType,
+    NotSet, Order, QueryOrder, QuerySelect, QueryTrait, SelectGetableValue, SelectModel,
+    SelectTwoModel, SelectorRaw, Set, Statement, StreamTrait, TransactionTrait, Unchanged, Values,
 };
 
 pub type DbResult<T> = Result<T, DbErr>;
 
 ////////////////////////////////////////////////////////////////////////////////
 
-pub trait OrmModelExt {
-    fn update_by_json<S, C>(&mut self, jsn: &Json, skip: &S) -> Result<(), DbErr>
+pub trait OrmModelExt<E, _T>
+where
+    E: EntityTrait,
+{
+    fn merge_from_json<S, C>(&mut self, jsn: Json, skip: &S) -> Result<(), DbErr>
     where
         S: ?Sized + Contains<C, str>,
         C: Eq + Ord + Hash + Borrow<str>;
-}
 
-pub trait OrmActiveModelExt {
-    fn update_by_json<S, C>(&mut self, jsn: &Json, skip: &S) -> Result<(), DbErr>
+    fn merge_from<A>(&mut self, src: A)
     where
-        S: ?Sized + Contains<C, str>,
-        C: Eq + Ord + Hash + Borrow<str>;
+        A: ActiveModelTrait<Entity = E>;
 }
 
-macro_rules! impl_update_by_json {
-    () => {
-        fn update_by_json<S, C>(&mut self, jsn: &Json, skip: &S) -> Result<(), DbErr>
+macro_rules! impl_merge_from {
+    ($M:ident, $A:ident) => {
+        fn merge_from_json<S, C>(&mut self, jsn: Json, skip: &S) -> Result<(), DbErr>
         where
             S: ?Sized + Contains<C, str>,
             C: Eq + Ord + Hash + Borrow<str>,
@@ -46,40 +42,54 @@ macro_rules! impl_update_by_json {
                 Err(DbErr::Type("Invalid JSON object".to_owned()))
             );
 
-            orm_validate_json::<M, S, C>(map, skip)?;
+            // Mark down which attribute exists in the JSON object
+            let json_keys: Vec<<$M::Entity as EntityTrait>::Column> =
+                <<$M::Entity as EntityTrait>::Column>::iter()
+                    .filter(|col| {
+                        let name = col.to_string();
+                        !skip.contains_it(&name) && map.contains_key(&name)
+                    })
+                    .collect();
 
-            for c in E::Column::iter() {
-                if !skip.contains_it(&c.as_str()) {
-                    if let Some(v) = map.get(c.as_str()) {
-                        match orm_json_to_db_value(c.def().get_column_type(), v) {
-                            Some(v) => {
-                                self.set(c, v);
-                            }
-                            _ => {}
-                        }
-                    }
+            // Convert JSON object into ActiveModel via Model
+            let m: <$M::Entity as EntityTrait>::Model =
+                serde_json::from_value(jsn).map_err(|e| DbErr::Json(e.to_string()))?;
+
+            for col in json_keys {
+                self.set(col, m.get(col));
+            }
+
+            Ok(())
+        }
+
+        fn merge_from<$A>(&mut self, src: $A)
+        where
+            $A: ActiveModelTrait<Entity = E>,
+        {
+            for col in <<$A::Entity as EntityTrait>::Column>::iter() {
+                if let ActiveValue::Set(v) = src.get(col) {
+                    self.set(col, v);
                 }
             }
-            Ok(())
         }
     };
 }
 
-impl<E, M> OrmModelExt for M
+impl<E, M> OrmModelExt<E, i32> for M
 where
-    M: ModelTrait<Entity = E> + Default + Serialize + DeserializeOwned,
     E: EntityTrait<Model = M>,
+    M: ModelTrait<Entity = E> + DeserializeOwned,
 {
-    impl_update_by_json!();
+    impl_merge_from!(M, A);
 }
 
-impl<E, M, A> OrmActiveModelExt for A
+impl<E, A> OrmModelExt<E, i16> for A
 where
+    E: EntityTrait,
     A: ActiveModelTrait<Entity = E>,
-    E: EntityTrait<Model = M>,
-    M: ModelTrait<Entity = E> + Default + Serialize + DeserializeOwned,
+    <E as EntityTrait>::Model: ModelTrait<Entity = E> + DeserializeOwned,
 {
-    impl_update_by_json!();
+    impl_merge_from!(A, A1);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -374,7 +384,11 @@ impl SqlHelper {
         .build()
     }
 
-    pub fn bind_param<N: AsRef<str>, V: Into<Value>>(&mut self, name: N, value: V) -> &mut Self {
+    pub fn bind_param<N, V>(&mut self, name: N, value: V) -> &mut Self
+    where
+        N: AsRef<str>,
+        V: Into<Value>,
+    {
         let value = value.into();
         for &idx in self.params.get(name.as_ref()).unwrap() {
             match idx {
@@ -576,12 +590,11 @@ impl OrderByHelper {
     pub fn write_filters<E>(&self, after: Option<&Json>, writer: &mut dyn FnMut(SimpleExpr))
     where
         E: EntityTrait,
-        E::Model: Default + OrmModelExt,
+        E::Model: DeserializeOwned,
     {
         // filters
-        if let Some(jsn @ &Json::Object(_)) = after {
-            let mut model = E::Model::default();
-            if model.update_by_json(jsn, &None::<&str>).is_ok() {
+        if let Some(after @ &Json::Object(_)) = after {
+            if let Ok(model) = serde_json::from_value::<E::Model>(after.clone()) {
                 // "<id_field>" <> after.<id_field>
                 let id_col_name = self
                     .id_field
@@ -599,7 +612,7 @@ impl OrderByHelper {
 
                 for pat in self.order_by.iter() {
                     if let Ok(col) = E::Column::from_str(&pat.field) {
-                        match jsn.get(&pat.field) {
+                        match after.get(&pat.field) {
                             None | Some(Json::Null) => (),
                             _ => {
                                 let mut field = Expr::tbl(self.entity.clone(), col);
@@ -650,7 +663,7 @@ impl OrderByHelper {
     pub fn select_filters<E>(&self, select: Select<E>, after: Option<&Json>) -> Select<E>
     where
         E: EntityTrait,
-        E::Model: Default + OrmModelExt,
+        E::Model: DeserializeOwned,
     {
         let mut select = Some(select);
         let mut writer = |x| {
@@ -675,7 +688,7 @@ impl OrderByHelper {
     pub fn raw_sql_filters<E>(&self, builder: &mut RawSqlBuilder, after: Option<&Json>)
     where
         E: EntityTrait,
-        E::Model: Default + OrmModelExt,
+        E::Model: DeserializeOwned,
     {
         let mut writer = |x| {
             builder.write(" AND ");
@@ -705,7 +718,83 @@ impl OrderByHelper {
 
 #[cfg(test)]
 mod tests {
+    use crate::db::tests::user::FaRecState;
+
     use super::*;
+
+    mod user {
+        use super::*;
+
+        #[derive(
+            Clone,
+            Copy,
+            Debug,
+            PartialEq,
+            Eq,
+            PartialOrd,
+            Ord,
+            AsRefStr,
+            EnumIter,
+            EnumMessage,
+            TryFromPrimitive,
+            Serialize_repr,
+            Deserialize_repr,
+            SmartDefault,
+            DeriveActiveEnum,
+        )]
+        #[sea_orm(rs_type = "i16", db_type = "SmallInteger")]
+        #[repr(i16)]
+        pub enum FaRecState {
+            #[default]
+            #[strum(message = "Normal")]
+            #[sea_orm(num_value = 1)]
+            Normal = 1,
+            #[strum(message = "Disabled")]
+            #[sea_orm(num_value = 2)]
+            Disabled = 2,
+            #[strum(message = "Deleted")]
+            #[sea_orm(num_value = 3)]
+            Deleted = 3,
+        }
+
+        #[derive(
+            Clone, Debug, Serialize, Deserialize, PartialEq, SmartDefault, DeriveEntityModel,
+        )]
+        #[sea_orm(table_name = "t_user")]
+        pub struct Model {
+            #[sea_orm(primary_key)]
+            #[serde(default)]
+            pub id: i64,
+            #[serde(default)]
+            pub state: FaRecState,
+            #[serde(default)]
+            pub role: i16,
+            pub name: Option<String>,
+            pub nickname: Option<String>,
+            pub email: Option<String>,
+            pub mobile: Option<String>,
+            pub gender: Option<i16>,
+            pub birth_year: Option<i32>,
+            #[serde(default = "utc_default")]
+            #[default(_code = "utc_default()")]
+            pub create_time: DateTimeUtc,
+            #[serde(default)]
+            pub password_hash: String,
+            #[serde(default)]
+            pub salt: String,
+        }
+
+        #[derive(Copy, Clone, Debug, EnumIter)]
+        pub enum Relation {}
+
+        impl RelationTrait for Relation {
+            fn def(&self) -> RelationDef {
+                panic!("No RelationDef")
+            }
+        }
+
+        impl ActiveModelBehavior for ActiveModel {}
+    }
 
     #[test]
     fn test_sql_helper() {
@@ -738,6 +827,41 @@ mod tests {
 
     #[test]
     fn test_active_model() {
+        let mut jsn = json!({
+            "id": 100,
+            "name": "system",
+            "xxx": "xxx",
+            "state": 8,
+            "create_time": "2022-01-01T01:02:03.123456Z",
+        });
 
+        jsn.insert_s("state", 8);
+        assert!(user::ActiveModel::from_json(jsn.clone()).is_err());
+        jsn.insert_s("state", -1);
+        assert!(user::ActiveModel::from_json(jsn.clone()).is_err());
+        jsn.insert_s("state", FaRecState::Deleted);
+        assert!(user::ActiveModel::from_json(jsn.clone()).is_ok());
+
+        let am = user::ActiveModel::from_json(jsn.clone()).unwrap();
+        println!("{:?}", &am);
+
+        let user: user::Model = serde_json::from_value(jsn.clone()).unwrap();
+        println!("{:?}", &user);
+
+        println!("{:?}", serde_json::to_value(&user));
+
+        let mut am = <user::ActiveModel as Default>::default();
+        jsn.insert_s("state", 8);
+        assert!(am.merge_from_json(jsn.clone(), &None::<&str>).is_err());
+        jsn.insert_s("state", FaRecState::Normal);
+        am.merge_from_json(jsn.clone(), &None::<&str>).unwrap();
+        println!("{:?}", &am);
+
+        let mut m = user::Model::default();
+        jsn.insert_s("state", 8);
+        assert!(m.merge_from_json(jsn.clone(), &None::<&str>).is_err());
+        jsn.insert_s("state", FaRecState::Normal);
+        m.merge_from_json(jsn.clone(), &None::<&str>).unwrap();
+        println!("{:?}", &m);
     }
 }
