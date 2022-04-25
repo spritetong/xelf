@@ -16,7 +16,7 @@ pub type DbResult<T> = Result<T, DbErr>;
 
 ////////////////////////////////////////////////////////////////////////////////
 
-pub trait OrmModelExt<E, _T>
+pub trait ModelRsx<E>
 where
     E: EntityTrait,
 {
@@ -28,6 +28,22 @@ where
     fn merge_from<A>(&mut self, src: A)
     where
         A: ActiveModelTrait<Entity = E>;
+}
+
+pub trait ActiveModelRsx<E>
+where
+    E: EntityTrait,
+{
+    fn merge_from_json<S, C>(&mut self, jsn: Json, skip: &S) -> Result<(), DbErr>
+    where
+        S: ?Sized + Contains<C, str>,
+        C: Eq + Ord + Hash + Borrow<str>;
+
+    fn merge_from<A>(&mut self, src: A)
+    where
+        A: ActiveModelTrait<Entity = E>;
+
+    fn set_columns(&mut self);
 }
 
 macro_rules! impl_merge_from {
@@ -75,21 +91,29 @@ macro_rules! impl_merge_from {
     };
 }
 
-impl<E, M> OrmModelExt<E, i32> for M
+impl<E, M> ModelRsx<E> for M
 where
     E: EntityTrait<Model = M>,
     M: ModelTrait<Entity = E> + DeserializeOwned,
 {
-    impl_merge_from!(M, A);
+    impl_merge_from! {M, A}
 }
 
-impl<E, A> OrmModelExt<E, i16> for A
+impl<E, A> ActiveModelRsx<E> for A
 where
     E: EntityTrait,
     A: ActiveModelTrait<Entity = E>,
     <E as EntityTrait>::Model: ModelTrait<Entity = E> + DeserializeOwned,
 {
-    impl_merge_from!(A, A1);
+    impl_merge_from! {A, A1}
+
+    fn set_columns(&mut self) {
+        for col in <<A::Entity as EntityTrait>::Column>::iter() {
+            if let ActiveValue::Unchanged(v) = self.get(col) {
+                self.set(col, v);
+            }
+        }
+    }
 }
 
 ////////////////////////////////////////////////////////////////////////////////
