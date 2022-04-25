@@ -512,13 +512,13 @@ struct OrderByField {
     aggregate_func: IdenStr<ByteString>,
 }
 
-pub struct QueryHelper {
+pub struct OrderByHelper {
     entity: DynIden,
     id_field: String,
     order_by: Vec<OrderByField>,
 }
 
-impl QueryHelper {
+impl OrderByHelper {
     pub fn new<T>(entity: T) -> Self
     where
         T: IntoIden,
@@ -734,5 +734,10 @@ mod tests {
             &statement.sql,
             "SELECT * FROM t_user\nWHERE name = $1\nORDER BY name\nLIMIT 100\nORDER BY name\nFOR UPDATE"
         );
+    }
+
+    #[test]
+    fn test_active_model() {
+
     }
 }
