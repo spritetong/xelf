@@ -43,7 +43,7 @@ where
     where
         A: ActiveModelTrait<Entity = E>;
 
-    fn set_columns(&mut self);
+    fn set_all(self) -> Self;
 }
 
 macro_rules! impl_merge_from {
@@ -107,12 +107,13 @@ where
 {
     impl_merge_from! {A, A1}
 
-    fn set_columns(&mut self) {
+    fn set_all(mut self) -> Self {
         for col in <<A::Entity as EntityTrait>::Column>::iter() {
             if let ActiveValue::Unchanged(v) = self.get(col) {
                 self.set(col, v);
             }
         }
+        self
     }
 }
 
