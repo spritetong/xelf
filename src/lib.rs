@@ -222,8 +222,11 @@ pub mod prelude {
     #[cfg(feature = "tokio")]
     pub use ::tokio::{
         self,
+        io::{AsyncReadExt, AsyncWriteExt},
         sync::{broadcast, mpsc, Mutex, RwLock},
     };
+    #[cfg(feature = "tokio")]
+    pub use ::tokio_rustls::{self, webpki};
     #[cfg(feature = "tokio-stream")]
     pub use ::tokio_stream::{
         self,

@@ -1,9 +1,4 @@
 use ::chrono::prelude::*;
-use ::serde::{
-    de::{self, Unexpected},
-    ser::Serializer,
-};
-use ::std::fmt;
 
 #[cfg(feature = "sea-orm")]
 pub use ::sea_orm::prelude::DateTimeUtc;
@@ -36,92 +31,100 @@ pub fn utc_into_str(utc: DateTimeUtc) -> String {
 
 ////////////////////////////////////////////////////////////////////////////////
 
-struct DeUtcVisitor;
-
-impl<'de> de::Visitor<'de> for DeUtcVisitor {
-    type Value = DateTime<Utc>;
-
-    fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-        write!(formatter, "a formatted date and time string")
-    }
-
-    fn visit_u64<E>(self, value: u64) -> Result<Self::Value, E>
-    where
-        E: de::Error,
-    {
-        match Utc.timestamp_opt(value as i64, 0).single() {
-            Some(v) => Ok(v),
-            _ => Err(de::Error::invalid_type(Unexpected::Unsigned(value), &self)),
-        }
-    }
-
-    fn visit_i64<E>(self, value: i64) -> Result<Self::Value, E>
-    where
-        E: de::Error,
-    {
-        match Utc.timestamp_opt(value, 0).single() {
-            Some(v) => Ok(v),
-            _ => Err(de::Error::invalid_type(Unexpected::Signed(value), &self)),
-        }
-    }
-
-    fn visit_f64<E>(self, value: f64) -> Result<Self::Value, E>
-    where
-        E: de::Error,
-    {
-        let secs = value.floor();
-        match Utc
-            .timestamp_opt(secs as i64, ((value - secs) * 1000000000.) as u32)
-            .single()
-        {
-            Some(v) => Ok(v),
-            _ => Err(de::Error::invalid_type(Unexpected::Float(value), &self)),
-        }
-    }
-
-    fn visit_str<E>(self, value: &str) -> Result<Self::Value, E>
-    where
-        E: de::Error,
-    {
-        match DateTime::parse_from_rfc3339(value) {
-            Ok(v) => Ok(DateTime::<Utc>::from(v)),
-            _ => Err(de::Error::invalid_type(Unexpected::Str(value), &self)),
-        }
-    }
-}
-
-/// Function to serializing a **`DateTimeUtc`**
-pub fn ser_x_utc<S>(utc: &DateTimeUtc, serializer: S) -> Result<S::Ok, S::Error>
-where
-    S: Serializer,
-{
-    serializer.serialize_str(&utc_into_str(*utc))
-}
-
-/// Function to deserializing a **`DateTimeUtc`**
-pub fn de_x_utc<'de, D>(deserializer: D) -> Result<DateTimeUtc, D::Error>
-where
-    D: de::Deserializer<'de>,
-{
-    deserializer.deserialize_any(DeUtcVisitor)
-}
-
 /// Module to serialize and deserialize a **`DateTimeUtc`**
+#[cfg(feature = "chrono-serde")]
 pub mod serde_x_utc {
-    pub use super::de_x_utc as deserialize;
-    pub use super::ser_x_utc as serialize;
+    use super::*;
+    use ::serde::{
+        de::{self, Unexpected},
+        ser::Serializer,
+    };
+    use ::std::fmt;
+
+    struct DeUtcVisitor;
+
+    impl<'de> de::Visitor<'de> for DeUtcVisitor {
+        type Value = DateTime<Utc>;
+
+        fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+            write!(formatter, "a formatted date and time string")
+        }
+
+        fn visit_u64<E>(self, value: u64) -> Result<Self::Value, E>
+        where
+            E: de::Error,
+        {
+            match Utc.timestamp_opt(value as i64, 0).single() {
+                Some(v) => Ok(v),
+                _ => Err(de::Error::invalid_type(Unexpected::Unsigned(value), &self)),
+            }
+        }
+
+        fn visit_i64<E>(self, value: i64) -> Result<Self::Value, E>
+        where
+            E: de::Error,
+        {
+            match Utc.timestamp_opt(value, 0).single() {
+                Some(v) => Ok(v),
+                _ => Err(de::Error::invalid_type(Unexpected::Signed(value), &self)),
+            }
+        }
+
+        fn visit_f64<E>(self, value: f64) -> Result<Self::Value, E>
+        where
+            E: de::Error,
+        {
+            let secs = value.floor();
+            match Utc
+                .timestamp_opt(secs as i64, ((value - secs) * 1000000000.) as u32)
+                .single()
+            {
+                Some(v) => Ok(v),
+                _ => Err(de::Error::invalid_type(Unexpected::Float(value), &self)),
+            }
+        }
+
+        fn visit_str<E>(self, value: &str) -> Result<Self::Value, E>
+        where
+            E: de::Error,
+        {
+            match DateTime::parse_from_rfc3339(value) {
+                Ok(v) => Ok(DateTime::<Utc>::from(v)),
+                _ => Err(de::Error::invalid_type(Unexpected::Str(value), &self)),
+            }
+        }
+    }
+
+    /// Function to serializing a **`DateTimeUtc`**
+    pub fn serialize<S>(utc: &DateTimeUtc, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        serializer.serialize_str(&utc_into_str(*utc))
+    }
+
+    /// Function to deserializing a **`DateTimeUtc`**
+    pub fn deserialize<'de, D>(deserializer: D) -> Result<DateTimeUtc, D::Error>
+    where
+        D: de::Deserializer<'de>,
+    {
+        deserializer.deserialize_any(DeUtcVisitor)
+    }
 }
+
+#[cfg(feature = "chrono-serde")]
+pub use serde_x_utc::{deserialize as de_x_utc, serialize as ser_x_utc};
 
 ////////////////////////////////////////////////////////////////////////////////
 
 #[cfg(test)]
 mod tests {
-    #[cfg(feature = "with-serde")]
+    #[cfg(feature = "chrono-serde")]
     #[test]
     fn test_utc_default() {
         use super::*;
         use crate::prelude::*;
-        
+
         #[derive(Clone, Debug, SmartDefault, Serialize, Deserialize)]
         struct Person {
             #[serde(default = "Default::default")]

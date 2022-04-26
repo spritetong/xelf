@@ -1,6 +1,6 @@
 [package]
 name = "rsx"
-version = "0.2.0"
+version = "0.2.1"
 edition = "2021"
 
 [lib]
@@ -17,15 +17,15 @@ full = ["common", "db", "signal"]
 with-bytes = ["bytes", "bytestring", "zerocopy"]
 with-hex = ["hex", "hex-literal"]
 with-log = ["log", "env-logger", "dotenv"]
-with-serde = ["json", "num", "serde", "serde-repr"]
-with-rustls = ["rustls", "rustls-pemfile"]
+with-serde = ["bytestring-serde", "chrono-serde", "json", "num", "serde", "serde-repr"]
+with-rustls = ["rustls", "rustls-pemfile", "tokio-rustls"]
 
 async = ["async-stream", "async-trait", "flume", "futures", "futures-util",
 	"mio", "pin-project", "tokio", "tokio-stream"]
 collections = ["maplit", "smallvec", "vec"]
-datetime = ["chrono", "num", "serde"]
+datetime = ["chrono", "num", "chrono-serde"]
 db = ["async", "collections", "datetime", "hashmap", "ouroboros", "rust-decimal",
-    "sea-orm", "shellexpand", "sqlx", "with-bytes", "with-serde"]
+    "sea-orm", "shellexpand", "sqlx", "with-bytes", "with-serde", "with-rustls"]
 derive = ["derive-more", "num-enum", "smart-default", "strum"]
 fs = ["tempfile"]
 hashmap = ["ahash", "ritelinked", "maplit"]
@@ -38,6 +38,9 @@ signal = ["tokio-stream"]
 sync = ["arc-swap", "crossbeam", "flume"]
 vec = []
 
+bytestring-serde = ["bytestring/serde", "serde"]
+chrono-serde = ["chrono/serde", "json", "serde"]
+
 [dependencies]
 ahash = { version = "^0.7", optional = true }
 maplit = { version = "^1.0", optional = true }
@@ -45,7 +48,7 @@ ritelinked = { version = "^0.3", optional = true }
 smallvec = { version = "^1.8", optional = true }
 
 bytes = { version = "^1.1", optional = true }
-bytestring = { version = "^1.0", features = ["serde"], optional = true }
+bytestring = { version = "^1.0", optional = true }
 
 chrono = { version = "^0.4", optional = true }
 
@@ -66,6 +69,7 @@ futures-util = { version = "^0.3", optional = true }
 mio = { version = "^0.8", optional = true }
 pin-project = { version = "^1.0", optional = true }
 tokio = { version = "^1.17", features = ["full"], optional = true }
+tokio-rustls = { version = "^0.23", optional = true }
 tokio-stream = { version = "^0.1", features = [
     "time", "sync", "signal", "net", "fs", "io-util"], optional = true }
 
@@ -89,7 +93,7 @@ serde-repr = { version = "^0.1", package = "serde_repr", optional = true }
 
 tempfile = { version = "^3.3", optional = true }
 
-rustls = { version = "^0.20", optional = true }
+rustls = { version = "^0.20", features = ["dangerous_configuration"], optional = true }
 rustls-pemfile = { version = "^1.0", optional = true }
 
 arc-swap = { version = "^1.5", optional = true }
