@@ -9,9 +9,9 @@ path = "src/lib.rs"
 
 [features]
 default = ["minimal"]
-minimal = ["datetime", "collections", "derive", "memoffset", "once-cell", "ouroboros"]
-common = ["minimal", "async", "fs", "hashmap", "net", "ptr", "regex", "str", "sync",
-          "with-bytes", "with-hex", "with-log", "with-rustls", "with-serde"]
+minimal = ["datetime", "collections", "derive", "io", "memoffset", "once-cell"]
+common = ["minimal", "async", "fs", "hashmap", "net", "ouroboros", "ptr", "rand", "regex",
+          "str", "sync", "with-bytes", "with-hex", "with-log", "with-rustls", "with-serde"]
 full = ["common", "db", "signal"]
 
 with-bytes = ["bytes", "bytestring", "zerocopy"]
@@ -20,19 +20,21 @@ with-log = ["log", "env-logger", "dotenv"]
 with-serde = ["bytestring-serde", "chrono-serde", "json", "num", "serde", "serde-repr"]
 with-rustls = ["rustls", "rustls-pemfile", "tokio-rustls"]
 
-async = ["async-stream", "async-trait", "flume", "futures", "futures-util",
+async = ["async-stream", "async-trait", "flume", "future", "futures", "futures-util",
 	"mio", "pin-project", "tokio", "tokio-stream"]
 collections = ["maplit", "smallvec", "vec"]
 datetime = ["chrono", "num", "chrono-serde"]
 db = ["async", "collections", "datetime", "hashmap", "ouroboros", "rust-decimal",
     "sea-orm", "shellexpand", "sqlx", "with-bytes", "with-serde", "with-rustls"]
 derive = ["derive-more", "num-enum", "smart-default", "strum"]
-fs = ["tempfile"]
+fs = ["io", "tempfile"]
+future = []
 hashmap = ["ahash", "ritelinked", "maplit"]
+io = []
 json = ["base64", "serde-json", "num", "collections", "with-hex"]
 net = ["ipnetwork"]
 num = []
-ptr = ["memoffset", "once-cell", "ouroboros"]
+ptr = ["memoffset", "once-cell"]
 str = []
 signal = ["tokio-stream"]
 sync = ["arc-swap", "crossbeam", "flume"]
@@ -84,6 +86,7 @@ zerocopy = { version = "^0.6", optional = true }
 once-cell = { version = "^1.10", package = "once_cell", optional = true }
 ouroboros = { version = "^0.15", optional = true }
 
+rand = { version = "^0.8", optional = true }
 regex = { version = "^1.5", optional = true }
 
 base64 = { version = "^0.13", optional = true }

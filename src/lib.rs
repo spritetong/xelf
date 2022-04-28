@@ -25,8 +25,8 @@ pub mod prelude {
         some_or_continue, some_or_return, uninit_assume_init, zeroed_init, If,
     };
 
-    #[cfg(feature = "async")]
-    pub use ::std::pin::Pin;
+    #[cfg(feature = "future")]
+    pub use ::std::{pin::Pin, future::Future};
 
     #[cfg(feature = "chrono")]
     pub use ::std::time::{self, Duration, Instant, SystemTime, UNIX_EPOCH};
@@ -34,9 +34,10 @@ pub mod prelude {
     #[cfg(feature = "fs")]
     pub use ::std::{
         fs,
-        io::{self, prelude::*},
         path::{self, Path, PathBuf},
     };
+    #[cfg(feature = "io")]
+    pub use ::std::io::{self, prelude::*};
 
     #[cfg(feature = "collections")]
     pub use crate::collections::*;
@@ -135,10 +136,10 @@ pub mod prelude {
     #[cfg(feature = "futures")]
     pub use ::futures::{
         self,
-        future::{join_all, try_join_all, Future, TryFuture},
+        future::{join_all, try_join_all, TryFuture},
     };
     #[cfg(feature = "futures-util")]
-    pub use ::futures_util;
+    pub use ::futures_util::{SinkExt, StreamExt};
 
     #[cfg(feature = "hex")]
     pub use ::hex::{self, FromHex, ToHex};
@@ -168,6 +169,9 @@ pub mod prelude {
 
     #[cfg(feature = "pin-project")]
     pub use ::pin_project::{self, pin_project};
+
+    #[cfg(feature = "rand")]
+    pub use ::rand::{self, Rng};
 
     #[cfg(feature = "regex")]
     pub use ::regex::{self, Regex};
@@ -225,13 +229,12 @@ pub mod prelude {
         io::{AsyncReadExt, AsyncWriteExt},
         sync::{broadcast, mpsc, Mutex, RwLock},
     };
-    #[cfg(feature = "tokio")]
+    #[cfg(feature = "tokio-rustls")]
     pub use ::tokio_rustls::{self, webpki};
     #[cfg(feature = "tokio-stream")]
     pub use ::tokio_stream::{
         self,
         wrappers::{errors::BroadcastStreamRecvError, BroadcastStream, ReceiverStream},
-        StreamExt as TokioStreamExt,
     };
 
     #[cfg(feature = "zerocopy")]

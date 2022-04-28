@@ -1,12 +1,15 @@
+#[cfg(feature = "num")]
 use crate::num::{Float, Num};
 use serde::{de, ser};
 use std::{fmt, marker::PhantomData, str::FromStr};
 
+#[cfg(feature = "num")]
 #[derive(Default)]
 struct DeNumVisitor<T: Num> {
     _phantom: std::marker::PhantomData<T>,
 }
 
+#[cfg(feature = "num")]
 impl<'de, T: Num> de::Visitor<'de> for DeNumVisitor<T> {
     type Value = T;
 
@@ -38,6 +41,7 @@ impl<'de, T: Num> de::Visitor<'de> for DeNumVisitor<T> {
 }
 
 /// Function to deserializing a string to an **`integer`**
+#[cfg(feature = "num")]
 pub fn de_x_num<'de, D, T>(deserializer: D) -> Result<T, D::Error>
 where
     D: de::Deserializer<'de>,
@@ -48,11 +52,13 @@ where
 
 ////////////////////////////////////////////////////////////////////////////////
 
+#[cfg(feature = "num")]
 #[derive(Default)]
 struct DeFloatVisitor<T: Float> {
     _phantom: std::marker::PhantomData<T>,
 }
 
+#[cfg(feature = "num")]
 impl<'de, T: Float> de::Visitor<'de> for DeFloatVisitor<T> {
     type Value = T;
 
@@ -91,6 +97,7 @@ impl<'de, T: Float> de::Visitor<'de> for DeFloatVisitor<T> {
 }
 
 /// Function to deserializing a string to an **`float`**
+#[cfg(feature = "num")]
 pub fn de_x_float<'de, D, T>(deserializer: D) -> Result<T, D::Error>
 where
     D: de::Deserializer<'de>,

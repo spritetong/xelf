@@ -1,4 +1,5 @@
 use crate::collections::Contains;
+#[cfg(feature = "num")]
 use crate::num::*;
 use ::serde::{de::DeserializeOwned, ser::Serialize};
 use ::serde_json::{json, map::Map, value::Index, Value as Json};
@@ -86,6 +87,7 @@ pub trait JsonGetOr<'a, I, T, _T> {
     fn get_or_else<F: FnOnce() -> T>(&'a self, index: I, f: F) -> T;
 }
 
+#[cfg(feature = "num")]
 impl<I: Index, T: Num, V: JsonIndexed<I>> JsonGetOr<'_, I, T, i64> for V {
     #[inline]
     fn get_or(&self, index: I, default: T) -> T {
@@ -105,6 +107,7 @@ impl<I: Index, T: Num, V: JsonIndexed<I>> JsonGetOr<'_, I, T, i64> for V {
     }
 }
 
+#[cfg(feature = "num")]
 impl<'a, I: Index, T: Float, V: JsonIndexed<I>> JsonGetOr<'a, I, T, f64> for V {
     #[inline]
     fn get_or(&self, index: I, default: T) -> T {
