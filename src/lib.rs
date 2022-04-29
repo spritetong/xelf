@@ -128,10 +128,13 @@ pub mod prelude {
     pub use ::derive_more::{self, AsMut, AsRef, Deref, DerefMut, Display};
 
     #[cfg(feature = "dotenv")]
-    pub use dotenv;
+    pub use ::dotenv;
 
     #[cfg(feature = "env-logger")]
-    pub use env_logger;
+    pub use ::env_logger;
+
+    #[cfg(feature = "flume")]
+    pub use ::flume;
 
     #[cfg(feature = "futures")]
     pub use ::futures::{
@@ -169,9 +172,6 @@ pub mod prelude {
 
     #[cfg(feature = "pin-project")]
     pub use ::pin_project::{self, pin_project};
-
-    #[cfg(feature = "rand")]
-    pub use ::rand::{self, Rng};
 
     #[cfg(feature = "regex")]
     pub use ::regex::{self, Regex};

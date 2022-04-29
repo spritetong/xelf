@@ -10,7 +10,7 @@ path = "src/lib.rs"
 [features]
 default = ["minimal"]
 minimal = ["datetime", "collections", "derive", "io", "memoffset", "once-cell"]
-common = ["minimal", "async", "fs", "hashmap", "net", "ouroboros", "ptr", "rand", "regex",
+common = ["minimal", "async", "fs", "hashmap", "net", "ouroboros", "ptr", "regex",
           "str", "sync", "with-bytes", "with-hex", "with-log", "with-rustls", "with-serde"]
 full = ["common", "db", "signal"]
 
@@ -86,7 +86,6 @@ zerocopy = { version = "^0.6", optional = true }
 once-cell = { version = "^1.10", package = "once_cell", optional = true }
 ouroboros = { version = "^0.15", optional = true }
 
-rand = { version = "^0.8", optional = true }
 regex = { version = "^1.5", optional = true }
 
 base64 = { version = "^0.13", optional = true }
