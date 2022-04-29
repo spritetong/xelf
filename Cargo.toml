@@ -11,9 +11,11 @@ path = "src/lib.rs"
 default = ["minimal"]
 minimal = ["datetime", "collections", "derive", "io", "memoffset", "once-cell"]
 common = ["minimal", "async", "fs", "hashmap", "net", "ouroboros", "ptr", "regex",
-          "str", "sync", "with-bytes", "with-hex", "with-log", "with-rustls", "with-serde"]
-full = ["common", "db", "signal"]
+          "str", "sync", "with-bytes", "with-hex", "with-log", "with-serde"]
+full = ["common", "db", "signal", "with-actix"]
 
+with-actix = ["actix", "actix-files", "actix-multipart", "actix-service",
+    "actix-web", "actix-web-actors", "actix-web-httpauth"]
 with-bytes = ["bytes", "bytestring", "zerocopy"]
 with-hex = ["hex", "hex-literal"]
 with-log = ["log", "env-logger", "dotenv"]
@@ -32,18 +34,26 @@ future = []
 hashmap = ["ahash", "ritelinked", "maplit"]
 io = []
 json = ["base64", "serde-json", "num", "collections", "with-hex"]
-net = ["ipnetwork"]
+net = ["ipnetwork", "socket2"]
 num = []
 ptr = ["memoffset", "once-cell"]
 str = []
 signal = ["tokio-stream"]
-sync = ["arc-swap", "crossbeam", "flume"]
+sync = ["arc-swap", "crossbeam", "num-cpus", "flume"]
 vec = []
 
 bytestring-serde = ["bytestring/serde", "serde"]
 chrono-serde = ["chrono/serde", "json", "serde"]
 
 [dependencies]
+actix = { version = "^0.13", optional = true }
+actix-files = { version = "^0.6", optional = true }
+actix-multipart = { version = "^0.4", optional = true }
+actix-service = { version = "^2.0", optional = true }
+actix-web = { version = "^4.0", features = ["rustls"], optional = true }
+actix-web-actors = { version = "^4.1", optional = true }
+actix-web-httpauth = { version = "^0.6", optional = true }
+
 ahash = { version = "^0.7", optional = true }
 maplit = { version = "^1.0", optional = true }
 ritelinked = { version = "^0.3", optional = true }
@@ -79,7 +89,9 @@ hex = { version = "^0.4", optional = true }
 hex-literal = { version = "^0.3", optional = true }
 
 ipnetwork = { version = "^0.19", optional = true }
+socket2 = { version = "^0.4", optional = true }
 
+num-cpus = { version = "^1.13", package = "num_cpus", optional = true }
 memoffset = { version = "^0.6", optional = true }
 zerocopy = { version = "^0.6", optional = true }
 

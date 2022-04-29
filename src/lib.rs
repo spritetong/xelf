@@ -64,6 +64,9 @@ pub mod prelude {
     #[cfg(feature = "serde")]
     pub use crate::serde::*;
 
+    #[cfg(feature = "socket2")]
+    pub use ::socket2;
+
     #[cfg(feature = "str")]
     pub use crate::str::*;
 
@@ -92,6 +95,21 @@ pub mod prelude {
     };
 
     ////////////////////////////////////////////////////////////////////////////
+
+    #[cfg(feature = "actix")]
+    pub use ::actix;
+    #[cfg(feature = "actix-files")]
+    pub use ::actix_files;
+    #[cfg(feature = "actix-multipart")]
+    pub use ::actix_multipart;
+    #[cfg(feature = "actix-service")]
+    pub use ::actix_service;
+    #[cfg(feature = "actix-web")]
+    pub use ::actix_web;
+    #[cfg(feature = "actix-web-actors")]
+    pub use ::actix_web_actors;
+    #[cfg(feature = "actix-web-httpauth")]
+    pub use ::actix_web_httpauth;
 
     #[cfg(feature = "ahash")]
     pub use ::ahash::{self, AHashMap, AHashSet};
@@ -151,6 +169,9 @@ pub mod prelude {
 
     #[cfg(feature = "ipnetwork")]
     pub use ::ipnetwork::{self, IpNetwork, Ipv4Network, Ipv6Network};
+
+    #[cfg(feature = "num-cpus")]
+    pub use ::num_cpus;
 
     #[cfg(feature = "memoffset")]
     pub use ::memoffset::{self, offset_of};
