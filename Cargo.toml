@@ -12,7 +12,7 @@ default = ["minimal"]
 minimal = ["datetime", "collections", "derive", "io", "memoffset", "once-cell"]
 common = ["minimal", "async", "fs", "hashmap", "net", "ouroboros", "ptr", "regex",
           "str", "sync", "with-bytes", "with-hex", "with-log", "with-serde"]
-full = ["common", "db", "signal", "with-actix"]
+full = ["common", "db", "ffi", "signal", "with-actix"]
 
 with-actix = ["actix", "actix-files", "actix-multipart", "actix-service",
     "actix-web", "actix-web-actors", "actix-web-httpauth"]
@@ -30,6 +30,7 @@ db = ["async", "collections", "datetime", "hashmap", "ouroboros", "rust-decimal"
     "sea-orm", "shellexpand", "sqlx", "with-bytes", "with-serde", "with-rustls"]
 derive = ["derive-more", "num-enum", "smart-default", "strum"]
 fs = ["io", "tempfile"]
+ffi = ["ritelinked", "sync"]
 future = []
 hashmap = ["ahash", "ritelinked", "maplit"]
 io = []

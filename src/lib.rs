@@ -4,6 +4,8 @@ pub mod collections;
 pub mod datetime;
 #[cfg(feature = "db")]
 pub mod db;
+#[cfg(feature = "ffi")]
+pub mod ffi;
 #[cfg(feature = "json")]
 pub mod json;
 #[cfg(feature = "num")]
@@ -21,7 +23,7 @@ pub mod vec;
 
 pub mod prelude {
     pub use crate::{
-        cstr, ok_or, ok_or_break, ok_or_continue, ok_or_return, some_or, some_or_break,
+        ok_or, ok_or_break, ok_or_continue, ok_or_return, some_or, some_or_break,
         some_or_continue, some_or_return, uninit_assume_init, zeroed_init, If,
     };
 
@@ -30,6 +32,11 @@ pub mod prelude {
 
     #[cfg(feature = "chrono")]
     pub use ::std::time::{self, Duration, Instant, SystemTime, UNIX_EPOCH};
+
+    #[cfg(feature = "ffi")]
+    pub use crate::{ffi::*, cstr};
+    #[cfg(feature = "ffi")]
+    pub use ::std::ffi;
 
     #[cfg(feature = "fs")]
     pub use ::std::{
@@ -307,10 +314,11 @@ macro_rules! uninit_assume_init {
 /// assert_eq!(name.to_str(), Ok("John"));
 /// assert_eq!(unsafe { *name.as_ptr().add(4) }, 0);
 /// ```
+#[cfg(feature = "ffi")]
 #[macro_export]
 macro_rules! cstr {
     ($s:literal) => {
-        unsafe { ::std::mem::transmute::<_, &std::ffi::CStr>(concat!($s, "\0")) }
+        unsafe { ::std::mem::transmute::<_, &::std::ffi::CStr>(concat!($s, "\0")) }
     };
 }
 
@@ -425,6 +433,7 @@ macro_rules! some_or_continue {
 
 #[cfg(test)]
 mod tests {
+    #[cfg(feature = "ffi")]
     #[test]
     fn test_cstr_macro() {
         let name: &std::ffi::CStr = cstr!("John");

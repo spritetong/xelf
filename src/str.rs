@@ -1,9 +1,11 @@
+#[cfg(feature = "ffi")]
 pub use ::std::ffi::{CStr, CString};
 pub use ::std::os::raw::c_char;
 
 /// Extension for &str and &String.
 pub trait StrRsx {
     /// Convert the string to CString
+    #[cfg(feature = "ffi")]
     fn as_cstring(&self) -> CString;
 
     /// Copy string to a C-str slice.
@@ -16,6 +18,7 @@ pub trait StrRsx {
     ///
     /// take the full size of the buffer (not just the length)
     /// and guarantee to NUL-terminate destination (as long as size is larger than 0).
+    #[cfg(feature = "ffi")]
     fn strlcpy(&self, dst: &mut [c_char]);
 }
 
@@ -50,17 +53,20 @@ impl StringRsx for String {
 }
 
 impl<T: AsRef<str>> StrRsx for T {
+    #[cfg(feature = "ffi")]
     #[inline]
     fn as_cstring(&self) -> CString {
         CString::new(self.as_ref()).unwrap()
     }
 
+    #[cfg(feature = "ffi")]
     #[inline]
     fn strlcpy(&self, dst: &mut [c_char]) {
         strlcpy(dst, self.as_ref());
     }
 }
 
+#[cfg(feature = "ffi")]
 fn strlcpy(dst: &mut [c_char], src: &str) {
     if dst.len() > 0 {
         let mut len = 0;
