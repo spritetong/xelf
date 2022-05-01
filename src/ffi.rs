@@ -12,7 +12,7 @@ use ::std::{
 ////////////////////////////////////////////////////////////////////////////////
 
 pub struct ParkerCache {
-    q: SegQueue<*const ()>,
+    q: SegQueue<usize>,
 }
 
 impl ParkerCache {
@@ -35,12 +35,12 @@ impl ParkerCache {
 
     #[inline]
     fn pop(&self) -> Option<Parker> {
-        self.q.pop().map(|x| unsafe { Parker::from_raw(x) })
+        self.q.pop().map(|x| unsafe { Parker::from_raw(x as *const ()) })
     }
 
     #[inline]
     fn push(&self, parker: Parker) {
-        self.q.push(Parker::into_raw(parker));
+        self.q.push(Parker::into_raw(parker) as usize);
     }
 }
 
