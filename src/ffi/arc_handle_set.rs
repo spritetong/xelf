@@ -1,77 +1,6 @@
-use ::crossbeam::{
-    queue::SegQueue,
-    sync::{Parker, ShardedLock},
-};
-use ::ritelinked::{linked_hash_map::RawEntryMut, LinkedHashMap};
-use ::std::{
-    any::{type_name, TypeId},
-    mem::{forget, ManuallyDrop},
-    sync::Arc,
-};
-
-////////////////////////////////////////////////////////////////////////////////
-
-pub struct ParkerCache {
-    q: SegQueue<usize>,
-}
-
-impl ParkerCache {
-    pub fn new() -> Self {
-        Self { q: SegQueue::new() }
-    }
-
-    pub fn get(&self) -> ParkerGuard {
-        ParkerGuard {
-            parker: ManuallyDrop::new(self.pop().unwrap_or_else(|| Parker::new())),
-            cache: self,
-        }
-    }
-
-    pub fn clear(&self) {
-        // Clear the packer queue.
-        println!("count for clear: {}", self.q.len());
-        while let Some(_) = self.pop() {}
-    }
-
-    #[inline]
-    fn pop(&self) -> Option<Parker> {
-        self.q.pop().map(|x| unsafe { Parker::from_raw(x as *const ()) })
-    }
-
-    #[inline]
-    fn push(&self, parker: Parker) {
-        self.q.push(Parker::into_raw(parker) as usize);
-    }
-}
-
-impl Drop for ParkerCache {
-    fn drop(&mut self) {
-        self.clear()
-    }
-}
-
-pub struct ParkerGuard<'a> {
-    parker: ManuallyDrop<Parker>,
-    cache: &'a ParkerCache,
-}
-
-impl<'a> ::std::ops::Deref for ParkerGuard<'a> {
-    type Target = Parker;
-
-    #[inline]
-    fn deref(&self) -> &Self::Target {
-        &*self.parker
-    }
-}
-
-impl<'a> Drop for ParkerGuard<'a> {
-    fn drop(&mut self) {
-        self.cache
-            .push(unsafe { ManuallyDrop::take(&mut self.parker) });
-    }
-}
-
-////////////////////////////////////////////////////////////////////////////////
+use crossbeam::sync::ShardedLock;
+use ritelinked::{linked_hash_map::RawEntryMut, LinkedHashMap};
+use std::{any::TypeId, mem::forget, sync::Arc};
 
 pub type ArcHandle = usize;
 type FnDrop = fn(h: ArcHandle);
@@ -108,7 +37,7 @@ impl ArcHandleSet {
                 panic!(
                     "Can not insert the handle ({}) of an Arc<{}>， it's already in the set.",
                     handle,
-                    type_name::<T>()
+                    std::any::type_name::<T>()
                 );
             }
             RawEntryMut::Vacant(vacant) => {
@@ -129,7 +58,7 @@ impl ArcHandleSet {
                     #[cfg(debug_assertions)]
                     panic!(
                         "Attemp to remove an Arc::<{}>, but the handle {} does not match.",
-                        type_name::<T>(),
+                        std::any::type_name::<T>(),
                         handle,
                     );
                 }
@@ -137,7 +66,7 @@ impl ArcHandleSet {
                 #[cfg(debug_assertions)]
                 panic!(
                     "Attemp to remove an Arc::<{}>, but the handle {} is not found.",
-                    type_name::<T>(),
+                    std::any::type_name::<T>(),
                     handle,
                 );
             }
@@ -152,14 +81,13 @@ impl ArcHandleSet {
                 if *t == TypeId::of::<T>() {
                     let a = arc_from_handle!(handle, T);
                     // Increase the reference count: clone() + forget().
-                    let r = Some(a.clone());
-                    forget(a);
-                    return r;
+                    forget(a.clone());
+                    return Some(a);
                 } else {
                     #[cfg(debug_assertions)]
                     panic!(
                         "Attemp to get a Arc::<{}>, but the handle does not match.",
-                        type_name::<T>(),
+                        std::any::type_name::<T>(),
                     );
                 }
             }
@@ -193,27 +121,8 @@ impl Drop for ArcHandleSet {
     }
 }
 
-////////////////////////////////////////////////////////////////////////////////
-
 mod tests {
     pub use super::*;
-
-    #[test]
-    fn test_parker_cache() {
-        let cache = ParkerCache::new();
-
-        let mut list = vec![];
-        for _ in 0..=100 {
-            let p = cache.get();
-            let u = p.unparker().clone();
-            u.unpark();
-            p.park();
-            list.push(p);
-        }
-        list.clear();
-
-        cache.clear();
-    }
 
     #[test]
     fn test_arc_handle_set() {
