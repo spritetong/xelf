@@ -41,6 +41,7 @@ impl ArcHandleSet {
                 );
             }
             RawEntryMut::Vacant(vacant) => {
+                forget(arc);
                 vacant.insert(handle, (drop_arc::<T>, t));
             }
         }
