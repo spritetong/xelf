@@ -34,7 +34,7 @@ impl ParkerCache {
     #[cfg(feature = "async")]
     pub fn block_on<'a, F>(&self, handle: tokio::runtime::Handle, future: F)
     where
-        F: Future<Output = ()> + Send + 'a,
+        F: Future<Output = ()> + 'a,
     {
         tokio_scope::Scope::new(&self, handle).block_on(future);
     }
@@ -137,13 +137,13 @@ mod tokio_scope {
             Scope { cache, handle }
         }
 
-        pub(super) fn block_on<'a, F>(self, future: F)
+        pub(super) fn block_on<'a, F>(&self, future: F)
         where
-            F: Future<Output = ()> + Send + 'a,
+            F: Future<Output = ()> + 'a,
         {
             let (unparker, parker) = self.cache.get();
 
-            let boxed: Pin<Box<dyn Future<Output = ()> + Send + 'a>> = Box::pin(future);
+            let boxed: Pin<Box<dyn Future<Output = ()> + 'a>> = Box::pin(future);
             // This transmute should be safe, as we use the `ScopedFuture` abstraction to prevent the
             // scope from exiting until every spawned `ScopedFuture` object is dropped, signifying that
             // they have completed their execution.
