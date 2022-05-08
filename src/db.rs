@@ -638,6 +638,53 @@ impl Iterator for SqlParamIterator {
 
 ////////////////////////////////////////////////////////////////////////////////
 
+pub struct SqlCache {
+    map: ShardedLock<LinkedHashMap<String, SqlHelper>>,
+}
+
+impl SqlCache {
+    pub fn new() -> Self {
+        Self {
+            map: ShardedLock::new(LinkedHashMap::new()),
+        }
+    }
+
+    pub fn get<N, F>(&self, name: N, maker: F) -> SqlHelper
+    where
+        N: AsRef<str>,
+        F: FnOnce() -> SqlHelper,
+    {
+        // Get from the cache at first.
+        if let Some(sql) = self.map.read().unwrap().get(name.as_ref()) {
+            return sql.clone();
+        }
+
+        // Insert a new SQL.
+        let sql = maker();
+        self.map
+            .write()
+            .unwrap()
+            .raw_entry_mut()
+            .from_key(name.as_ref())
+            .or_insert(name.as_ref().to_owned(), sql)
+            .1
+            .clone()
+    }
+
+    pub fn remove<N>(&self, name: N) -> Option<SqlHelper>
+    where
+        N: AsRef<str>,
+    {
+        self.map.write().unwrap().remove(name.as_ref())
+    }
+
+    pub fn clear(&self) {
+        self.map.write().unwrap().clear();
+    }
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
 struct OrderByField {
     field: String,
     asc: bool,
@@ -919,43 +966,50 @@ mod tests {
 
     #[test]
     fn test_sql_helper() {
-        let mut w = RawSqlBuilder::new(DbBackend::Postgres);
-        w.write("SELECT * FROM t_user\n");
-        w.write_with_args("WHERE name = ?\n", [":name"]);
-        w.write("FOR UPDATE");
-        let mut q = SqlHelper::from(w);
-        q.bind_param(":name", "Tom");
-        let statement = q.into_statement();
-        assert_eq!(
-            &statement.sql,
-            "SELECT * FROM t_user\nWHERE name = $1\nFOR UPDATE"
-        );
+        let cache = SqlCache::new();
 
-        let mut w = RawSqlBuilder::new(DbBackend::Postgres);
-        w.write("SELECT * FROM t_user\n");
-        w.write_with_args("WHERE name = ?\n", [":name"]);
-        w.write("${:order_by}\n");
-        w.write("${:limit}\n");
-        w.write("${:order_by}\n");
-        w.write("FOR UPDATE");
+        for _ in 0..10 {
+            let mut q = cache.get("SQL1", || {
+                let mut w = RawSqlBuilder::new(DbBackend::Postgres);
+                w.write("SELECT * FROM t_user\n");
+                w.write_with_args("WHERE name = ?\n", [":name"]);
+                w.write("FOR UPDATE");
+                SqlHelper::from(w)
+            });
+            q.bind_param(":name", "Tom");
+            let statement = q.into_statement();
+            assert_eq!(
+                &statement.sql,
+                "SELECT * FROM t_user\nWHERE name = $1\nFOR UPDATE"
+            );
 
-        let mut q = SqlHelper::from(w);
-        q.bind_param(":name", "Tom");
-        q.bind_param(":order_by", "ORDER BY name");
-        q.bind_param(":limit", "LIMIT 100");
+            let mut q = cache.get("SQL2", || {
+                let mut w = RawSqlBuilder::new(DbBackend::Postgres);
+                w.write("SELECT * FROM t_user\n");
+                w.write_with_args("WHERE name = ?\n", [":name"]);
+                w.write("${:order_by}\n");
+                w.write("${:limit}\n");
+                w.write("${:order_by}\n");
+                w.write("FOR UPDATE");
+                SqlHelper::from(w)
+            });
+            q.bind_param(":name", "Tom");
+            q.bind_param(":order_by", "ORDER BY name");
+            q.bind_param(":limit", "LIMIT 100");
 
-        let a = Expr::expr(Expr::cust("A")).is_in(["1", "2", "3"]);
-        println!("{}", q.expr_to_string(&a));
-        let a = Expr::expr(Expr::cust("A")).is_in([Utc::now()]);
-        println!("{}", q.expr_to_string(&a));
+            let a = Expr::expr(Expr::cust("A")).is_in(["1", "2", "3"]);
+            println!("{}", q.expr_to_string(&a));
+            let a = Expr::expr(Expr::cust("A")).is_in([Utc::now()]);
+            println!("{}", q.expr_to_string(&a));
 
-        let statement = q.into_statement();
-        println!("{:?}", &statement);
+            let statement = q.into_statement();
+            println!("{:?}", &statement);
 
-        assert_eq!(
-            &statement.sql,
-            "SELECT * FROM t_user\nWHERE name = $1\nORDER BY name\nLIMIT 100\nORDER BY name\nFOR UPDATE"
-        );
+            assert_eq!(
+                &statement.sql,
+                "SELECT * FROM t_user\nWHERE name = $1\nORDER BY name\nLIMIT 100\nORDER BY name\nFOR UPDATE"
+            );
+        }
     }
 
     #[test]
