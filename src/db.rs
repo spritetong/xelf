@@ -344,11 +344,58 @@ enum ParamIndex {
 type ParamIndices = smallvec::SmallVec<[ParamIndex; 4]>;
 type ParamMap = LinkedHashMap<ByteString, ParamIndices>;
 
-#[derive(Deref, DerefMut, Clone, Debug)]
+#[derive(Clone, Debug)]
+pub enum SqlString {
+    String(String),
+    Shared(ByteString),
+}
+
+impl SqlString {
+    pub fn into_string(self) -> String {
+        match self {
+            Self::String(v) => v,
+            Self::Shared(v) => v.deref().to_owned(),
+        }
+    }
+
+    pub fn into_shared(self) -> ByteString {
+        match self {
+            Self::String(v) => unsafe { ByteString::from_bytes_unchecked(Bytes::from(v)) },
+            Self::Shared(v) => v,
+        }
+    }
+}
+
+impl Default for SqlString {
+    fn default() -> Self {
+        Self::Shared(ByteString::new())
+    }
+}
+
+impl Deref for SqlString {
+    type Target = str;
+
+    fn deref(&self) -> &Self::Target {
+        match self {
+            Self::String(v) => v.as_str(),
+            Self::Shared(v) => v.deref(),
+        }
+    }
+}
+
+impl AsRef<str> for SqlString {
+    #[inline]
+    fn as_ref(&self) -> &str {
+        self.deref()
+    }
+}
+
+#[derive(Clone, Debug)]
 pub struct SqlHelper {
-    #[deref]
-    #[deref_mut]
-    statement: Statement,
+    sql: SqlString,
+    pub values: Option<Values>,
+    pub db_backend: DbBackend,
+
     sql_slices: Vec<ByteString>,
     params: Arc<ParamMap>,
 }
@@ -356,27 +403,39 @@ pub struct SqlHelper {
 impl SqlHelper {
     pub fn into_statement(self) -> Statement {
         let Self {
-            mut statement,
+            sql,
+            values,
+            db_backend,
             sql_slices,
             ..
         } = self;
 
-        if !sql_slices.is_empty() {
+        let sql = if sql_slices.is_empty() {
+            match sql {
+                SqlString::String(v) => v,
+                SqlString::Shared(v) => v.deref().to_owned(),
+            }
+        } else {
             let len = sql_slices.iter().fold(0usize, |n, x| n + x.len());
-            statement.sql.clear();
-            statement.sql.reserve(len);
+            let mut sql = String::with_capacity(len);
             sql_slices
                 .iter()
-                .for_each(|x| statement.sql.write_str(x.deref()).unwrap());
+                .for_each(|x| sql.write_str(x.deref()).unwrap());
+            sql
+        };
+
+        Statement {
+            sql,
+            values,
+            db_backend,
         }
-        statement
     }
 
     pub fn into_select<M>(self) -> SelectorRaw<SelectModel<M>>
     where
         M: FromQueryResult,
     {
-        M::find_by_statement(self.into())
+        M::find_by_statement(self.into_statement())
     }
 
     pub fn into_select_two<M, N>(self) -> SelectorRaw<SelectTwoModel<M, N>>
@@ -400,6 +459,11 @@ impl SqlHelper {
         SelectorRaw::<SelectGetableValue<T, C>>::with_columns::<T, C>(self.into())
     }
 
+    #[inline]
+    pub fn sql(&self) -> &str {
+        self.sql.deref()
+    }
+
     pub fn iter_params(&self) -> SqlParamIterator {
         let params = self.params.clone();
         SqlParamIteratorBuilder {
@@ -418,7 +482,7 @@ impl SqlHelper {
         for &idx in self.params.get(name.as_ref()).unwrap() {
             match idx {
                 ParamIndex::Value(i) => {
-                    if let Some(ref mut values) = self.statement.values {
+                    if let Some(ref mut values) = self.values {
                         values.0[i as usize] = value.clone();
                     }
                 }
@@ -445,17 +509,23 @@ impl SqlHelper {
 
     #[inline]
     pub fn expr_to_string(&self, expr: &SimpleExpr) -> String {
-        RawSqlBuilder::expr_to_string(self.statement.db_backend, expr)
+        RawSqlBuilder::expr_to_string(self.db_backend, expr)
     }
 }
 
 impl From<Statement> for SqlHelper {
     fn from(statement: Statement) -> Self {
+        let Statement {
+            sql,
+            values,
+            db_backend,
+        } = statement;
+
         let mut params = ParamMap::new();
-        let mut sql_slices = Vec::new();
+        let mut sql_slices = Vec::<ByteString>::new();
 
         // Get value indices.
-        if let Some(values) = &statement.values {
+        if let Some(values) = &values {
             for (index, param) in values.iter().enumerate() {
                 if let Value::String(Some(name)) = param {
                     if name.starts_with(':') {
@@ -471,37 +541,61 @@ impl From<Statement> for SqlHelper {
         }
 
         // Get SQL block indices.
-        let sql = statement.sql.as_str();
-        let mut left = sql.as_bytes();
-        let _ = shellexpand::env_with_context_no_errors::<str, &str, _>(sql, |name| {
+        let mut sql_bytes = Bytes::new();
+        let mut fixed_off = 0usize;
+        let mut left = Bytes::new();
+        let _ = shellexpand::env_with_context_no_errors::<str, &str, _>(sql.as_str(), |name| {
             if name.starts_with(':') {
-                let (a, b) = left.split_at((name.as_ptr() as usize) - (left.as_ptr() as usize) - 2);
-                // Push SQL text before the parameter.
-                sql_slices.push(unsafe { mem::transmute::<_, &str>(a).to_owned().into() });
+                if left.is_empty() {
+                    sql_bytes = Bytes::copy_from_slice(sql.as_bytes());
+                    // Fixed offset between "sql_bytes" and "sql"
+                    fixed_off = sql_bytes.as_ptr().wrapping_sub(sql.as_ptr() as usize) as usize;
+                    left = sql_bytes.clone();
+                }
 
-                let (a, b) = b.split_at(name.len() + 3);
-                // Push the parameter: ${<name>}
-                sql_slices.push(unsafe { mem::transmute::<_, &str>(a).to_owned().into() });
+                let mut right = left.split_off(
+                    name.as_ptr()
+                        .wrapping_add(fixed_off)
+                        .wrapping_sub(left.as_ptr() as usize)
+                        .wrapping_sub(2) as usize,
+                );
+                // Push SQL text before the parameter.
+                sql_slices.push(unsafe { ByteString::from_bytes_unchecked(left.clone()) });
 
                 // Save the left slice.
-                left = b;
+                left = right.split_off(name.len() + 3);
+
+                // Push the parameter: ${<name>}
+                sql_slices.push(unsafe { ByteString::from_bytes_unchecked(right.clone()) });
 
                 params
                     .raw_entry_mut()
                     .from_key(name)
-                    .or_insert_with(|| (name.deref().clone().into(), ParamIndices::new()))
+                    .or_insert_with(move || {
+                        (
+                            unsafe {
+                                ByteString::from_bytes_unchecked(right.slice(2..right.len() - 1))
+                            },
+                            ParamIndices::new(),
+                        )
+                    })
                     .1
                     .push(ParamIndex::Sql((sql_slices.len() - 1) as u32));
             }
             None
         });
-        if !sql_slices.is_empty() {
-            sql_slices.push(unsafe { mem::transmute::<_, &str>(left).to_owned().into() });
-        }
+        let sql = if sql_slices.is_empty() {
+            SqlString::String(sql)
+        } else {
+            sql_slices.push(unsafe { ByteString::from_bytes_unchecked(left) });
+            SqlString::Shared(unsafe { ByteString::from_bytes_unchecked(sql_bytes) })
+        };
 
         //println!("{:?} {:?}", &statement, &params);
         Self {
-            statement,
+            sql,
+            values,
+            db_backend,
             sql_slices,
             params: Arc::new(params),
         }
@@ -564,7 +658,7 @@ impl OrderByHelper {
     {
         Self {
             entity: entity.into_iden(),
-            id_field: "id".to_owned(),
+            id_field: String::new(),
             order_by: Vec::new(),
         }
     }
@@ -620,18 +714,20 @@ impl OrderByHelper {
         // filters
         if let Some(after @ &Json::Object(_)) = after {
             if let Ok(model) = serde_json::from_value::<E::Model>(after.clone()) {
-                // "<id_field>" <> after.<id_field>
-                let id_col_name = self
-                    .id_field
-                    .split('.')
-                    .into_iter()
-                    .rev()
-                    .next()
-                    .unwrap_or(self.id_field.as_str());
+                // Filter: "<id_field>" <> after.<id_field>
+                let id_col_name = self.id_field.split('.').last().unwrap();
                 if let Ok(id_col) = E::Column::from_str(id_col_name) {
                     let after_id = model.get(id_col);
                     if !sea_orm::sea_query::sea_value_to_json_value(&after_id).is_null() {
                         writer(Expr::tbl(self.entity.clone(), id_col).ne(after_id));
+                    }
+                } else {
+                    for key in <E as EntityTrait>::PrimaryKey::iter() {
+                        let col = key.into_column();
+                        let value = model.get(col);
+                        if !sea_orm::sea_query::sea_value_to_json_value(&value).is_null() {
+                            writer(Expr::tbl(self.entity.clone(), col).ne(value));
+                        }
                     }
                 }
 
@@ -823,6 +919,18 @@ mod tests {
 
     #[test]
     fn test_sql_helper() {
+        let mut w = RawSqlBuilder::new(DbBackend::Postgres);
+        w.write("SELECT * FROM t_user\n");
+        w.write_with_args("WHERE name = ?\n", [":name"]);
+        w.write("FOR UPDATE");
+        let mut q = SqlHelper::from(w);
+        q.bind_param(":name", "Tom");
+        let statement = q.into_statement();
+        assert_eq!(
+            &statement.sql,
+            "SELECT * FROM t_user\nWHERE name = $1\nFOR UPDATE"
+        );
+
         let mut w = RawSqlBuilder::new(DbBackend::Postgres);
         w.write("SELECT * FROM t_user\n");
         w.write_with_args("WHERE name = ?\n", [":name"]);
