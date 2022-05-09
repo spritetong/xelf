@@ -708,7 +708,7 @@ impl SqlCache {
     pub fn get<N, F>(&self, name: N, db_backend: DbBackend, maker: F) -> SqlHelper
     where
         N: AsRef<str>,
-        F: FnOnce(DbBackend) -> SqlHelper + 'static,
+        F: FnOnce(DbBackend) -> SqlHelper,
     {
         let name = format!("{:?}://{}", db_backend, name.as_ref());
 
