@@ -20,7 +20,7 @@ pub trait ModelRsx<E>
 where
     E: EntityTrait,
 {
-    fn merge_from_json<S, C>(&mut self, jsn: Json, skip: &S) -> Result<(), DbErr>
+    fn merge_from_json<S, C>(&mut self, jsn: Json, skip: &S) -> DbResult<()>
     where
         S: ?Sized + Contains<C, str>,
         C: Eq + Ord + Hash + Borrow<str>;
@@ -34,7 +34,7 @@ pub trait ActiveModelRsx<E>
 where
     E: EntityTrait,
 {
-    fn merge_from_json<S, C>(&mut self, jsn: Json, skip: &S) -> Result<(), DbErr>
+    fn merge_from_json<S, C>(&mut self, jsn: Json, skip: &S) -> DbResult<()>
     where
         S: ?Sized + Contains<C, str>,
         C: Eq + Ord + Hash + Borrow<str>;
@@ -48,7 +48,7 @@ where
 
 macro_rules! impl_merge_from {
     ($M:ident, $A:ident) => {
-        fn merge_from_json<S, C>(&mut self, jsn: Json, skip: &S) -> Result<(), DbErr>
+        fn merge_from_json<S, C>(&mut self, jsn: Json, skip: &S) -> DbResult<()>
         where
             S: ?Sized + Contains<C, str>,
             C: Eq + Ord + Hash + Borrow<str>,
@@ -138,10 +138,26 @@ impl<T: AsRef<str> + Clone + Send + Sync> Iden for IdenStr<T> {
     }
 }
 
-#[async_trait]
-pub trait DbConnExt: ConnectionTrait {
+pub trait DbBackendExt<C> {
+    fn builtin_func(&self, name: &str) -> &'static str;
+
+    fn func(&self, name: &str) -> SimpleExpr;
+
+    fn func_unary<T>(&self, name: &str, arg: T) -> SimpleExpr
+    where
+        T: Into<SimpleExpr>;
+
+    fn func_with_args<T, I>(&self, name: &str, args: I) -> SimpleExpr
+    where
+        T: Into<SimpleExpr>,
+        I: IntoIterator<Item = T>;
+
+    fn lock_table_sql(&self, table: &str, mode: DbLockMode) -> DbResult<String>;
+}
+
+impl DbBackendExt<DbBackend> for DbBackend {
     fn builtin_func(&self, name: &str) -> &'static str {
-        match self.get_database_backend() {
+        match *self {
             DbBackend::Postgres => match name {
                 "now()" => return "now()",
                 "least" => return "least",
@@ -161,11 +177,7 @@ pub trait DbConnExt: ConnectionTrait {
             _ => (),
         }
 
-        panic!(
-            "No built-in function {} for {:?}",
-            name,
-            self.get_database_backend()
-        );
+        panic!("No built-in function {} for {:?}", name, self);
     }
 
     fn func(&self, name: &str) -> SimpleExpr {
@@ -187,8 +199,8 @@ pub trait DbConnExt: ConnectionTrait {
         Func::cust(IdenStr(self.builtin_func(name))).args(args)
     }
 
-    async fn lock_table(&self, table: &str, mode: DbLockMode) -> DbResult<()> {
-        match self.get_database_backend() {
+    fn lock_table_sql(&self, table: &str, mode: DbLockMode) -> DbResult<String> {
+        match *self {
             DbBackend::Postgres => {
                 if !table.is_empty() {
                     let mode = match mode {
@@ -196,12 +208,56 @@ pub trait DbConnExt: ConnectionTrait {
                         DbLockMode::Exclusive => "EXCLUSIVE",
                         DbLockMode::AccessExclusive => "ACCESS EXCLUSIVE",
                     };
-                    let sql = format!("LOCK TABLE {} IN {} MODE;", table, mode);
-                    self.execute(Statement::from_string(self.get_database_backend(), sql))
-                        .await?;
+                    Ok(format!("LOCK TABLE {} IN {} MODE;", table, mode))
+                } else {
+                    Ok(String::new())
                 }
             }
-            DbBackend::Sqlite => (),
+            DbBackend::Sqlite => Ok(String::new()),
+            _ => Err(DbErr::Custom("no implementation".to_owned())),
+        }
+    }
+}
+
+impl<C: ConnectionTrait> DbBackendExt<()> for C {
+    fn builtin_func(&self, name: &str) -> &'static str {
+        self.get_database_backend().builtin_func(name)
+    }
+
+    fn func(&self, name: &str) -> SimpleExpr {
+        self.get_database_backend().func(name)
+    }
+
+    fn func_unary<T>(&self, name: &str, arg: T) -> SimpleExpr
+    where
+        T: Into<SimpleExpr>,
+    {
+        self.get_database_backend().func_unary(name, arg)
+    }
+
+    fn func_with_args<T, I>(&self, name: &str, args: I) -> SimpleExpr
+    where
+        T: Into<SimpleExpr>,
+        I: IntoIterator<Item = T>,
+    {
+        self.get_database_backend().func_with_args(name, args)
+    }
+
+    fn lock_table_sql(&self, table: &str, mode: DbLockMode) -> DbResult<String> {
+        self.get_database_backend().lock_table_sql(table, mode)
+    }
+}
+
+#[async_trait]
+pub trait DbConnExt: ConnectionTrait {
+    async fn lock_table(&self, table: &str, mode: DbLockMode) -> DbResult<()> {
+        let backend = self.get_database_backend();
+        match backend.lock_table_sql(table, mode) {
+            Ok(sql) => {
+                if !sql.is_empty() {
+                    self.execute(Statement::from_string(backend, sql)).await?;
+                }
+            }
             _ => return Err(DbErr::Custom("no implementation".to_owned())),
         }
         Ok(())
@@ -639,7 +695,7 @@ impl Iterator for SqlParamIterator {
 ////////////////////////////////////////////////////////////////////////////////
 
 pub struct SqlCache {
-    map: ShardedLock<LinkedHashMap<String, SqlHelper>>,
+    map: ShardedLock<LinkedHashMap<String, Arc<SqlHelper>>>,
 }
 
 impl SqlCache {
@@ -649,33 +705,42 @@ impl SqlCache {
         }
     }
 
-    pub fn get<N, F>(&self, name: N, maker: F) -> SqlHelper
+    pub fn get<N, F>(&self, name: N, db_backend: DbBackend, maker: F) -> SqlHelper
     where
         N: AsRef<str>,
-        F: FnOnce() -> SqlHelper,
+        F: FnOnce(DbBackend) -> SqlHelper + 'static,
     {
-        // Get from the cache at first.
-        if let Some(sql) = self.map.read().unwrap().get(name.as_ref()) {
-            return sql.clone();
-        }
+        let name = format!("{:?}://{}", db_backend, name.as_ref());
 
-        // Insert a new SQL.
-        let sql = maker();
-        self.map
-            .write()
-            .unwrap()
-            .raw_entry_mut()
-            .from_key(name.as_ref())
-            .or_insert(name.as_ref().to_owned(), sql)
-            .1
-            .clone()
+        // Get from the cache at first.
+        let sql = {
+            let guard = self.map.read().unwrap();
+            match guard.get(&name) {
+                Some(v) => v.clone(),
+                _ => {
+                    drop(guard);
+                    // Insert a new SQL.
+                    let sql = Arc::new(maker(db_backend));
+                    self.map
+                        .write()
+                        .unwrap()
+                        .raw_entry_mut()
+                        .from_key(&name)
+                        .or_insert(name, sql)
+                        .1
+                        .clone()
+                }
+            }
+        };
+        sql.deref().clone()
     }
 
-    pub fn remove<N>(&self, name: N) -> Option<SqlHelper>
+    pub fn remove<N>(&self, name: N, db_backend: DbBackend) -> Option<Arc<SqlHelper>>
     where
         N: AsRef<str>,
     {
-        self.map.write().unwrap().remove(name.as_ref())
+        let name = format!("{:?}://{}", db_backend, name.as_ref());
+        self.map.write().unwrap().remove(&name)
     }
 
     pub fn clear(&self) {
@@ -969,8 +1034,8 @@ mod tests {
         let cache = SqlCache::new();
 
         for _ in 0..10 {
-            let mut q = cache.get("SQL1", || {
-                let mut w = RawSqlBuilder::new(DbBackend::Postgres);
+            let mut q = cache.get("SQL1", DbBackend::Postgres, |be| {
+                let mut w = RawSqlBuilder::new(be);
                 w.write("SELECT * FROM t_user\n");
                 w.write_with_args("WHERE name = ?\n", [":name"]);
                 w.write("FOR UPDATE");
@@ -983,8 +1048,8 @@ mod tests {
                 "SELECT * FROM t_user\nWHERE name = $1\nFOR UPDATE"
             );
 
-            let mut q = cache.get("SQL2", || {
-                let mut w = RawSqlBuilder::new(DbBackend::Postgres);
+            let mut q = cache.get("SQL2", DbBackend::Postgres, |be| {
+                let mut w = RawSqlBuilder::new(be);
                 w.write("SELECT * FROM t_user\n");
                 w.write_with_args("WHERE name = ?\n", [":name"]);
                 w.write("${:order_by}\n");
