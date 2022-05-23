@@ -63,7 +63,7 @@ macro_rules! impl_merge_from {
                 <<$M::Entity as EntityTrait>::Column>::iter()
                     .filter(|col| {
                         let name = col.to_string();
-                        !skip.contains_it(&name) && map.contains_key(&name)
+                        !skip.contains_ref(&name) && map.contains_key(&name)
                     })
                     .collect();
 

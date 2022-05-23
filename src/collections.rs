@@ -13,7 +13,7 @@ where
     Q: ?Sized + Eq + Hash + Ord,
 {
     /// Returns `true` if the container contains a value for the specified key.
-    fn contains_it(&self, k: &Q) -> bool;
+    fn contains_ref(&self, k: &Q) -> bool;
 }
 
 macro_rules! impl_contains {
@@ -59,7 +59,7 @@ macro_rules! impl_contains {
                     Q: ?Sized + Eq + Hash + Ord,
                     $($preds)*
             {
-                fn contains_it(&self, k: &Q) -> bool {
+                fn contains_ref(&self, k: &Q) -> bool {
                     impl_contains!(@$type self, k)
                 }
             }
@@ -102,26 +102,26 @@ mod tests {
 
     #[test]
     fn test_container() {
-        assert!(Some("1").contains_it("1"));
-        assert!(!Some("1").contains_it("2"));
-        assert!(!None::<&str>.contains_it("2"));
+        assert!(Some("1").contains_ref("1"));
+        assert!(!Some("1").contains_ref("2"));
+        assert!(!None::<&str>.contains_ref("2"));
 
-        assert!(Some(1).contains_it(&1));
-        assert!(!Some(1).contains_it(&2));
-        assert!(!None::<i32>.contains_it(&2));
+        assert!(Some(1).contains_ref(&1));
+        assert!(!Some(1).contains_ref(&2));
+        assert!(!None::<i32>.contains_ref(&2));
 
-        assert!(["1", "2", "3"].contains_it("1"));
-        assert!(["1".to_owned(), "2".to_owned(), "3".to_owned()].contains_it("1"));
-        assert!(["1".to_owned(), "2".to_owned(), "3".to_owned()].contains_it(&"1".to_owned()));
-        assert!(vec!["1".to_owned(), "2".to_owned(), "3".to_owned()].contains_it("1"));
+        assert!(["1", "2", "3"].contains_ref("1"));
+        assert!(["1".to_owned(), "2".to_owned(), "3".to_owned()].contains_ref("1"));
+        assert!(["1".to_owned(), "2".to_owned(), "3".to_owned()].contains_ref(&"1".to_owned()));
+        assert!(vec!["1".to_owned(), "2".to_owned(), "3".to_owned()].contains_ref("1"));
 
-        assert!([1, 2, 3].contains_it(&1));
-        assert!(vec![1, 2, 3].contains_it(&1));
+        assert!([1, 2, 3].contains_ref(&1));
+        assert!(vec![1, 2, 3].contains_ref(&1));
 
         #[cfg(feature = "serde-json")]
         {
             let a = json!({"1": 1, "2": 2, "3": 3});
-            assert!(a.as_object().unwrap().contains_it("1"));
+            assert!(a.as_object().unwrap().contains_ref("1"));
         }
     }
 }
