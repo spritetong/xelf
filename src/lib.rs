@@ -264,6 +264,11 @@ pub mod prelude {
         self,
         wrappers::{errors::BroadcastStreamRecvError, BroadcastStream, ReceiverStream},
     };
+    #[cfg(feature = "tokio-util")]
+    pub use ::tokio_util::{self, sync::CancellationToken};
+
+    #[cfg(feature = "url")]
+    pub use ::url::{self, Url};
 
     #[cfg(feature = "zerocopy")]
     pub use ::zerocopy::{self, AsBytes, FromBytes};

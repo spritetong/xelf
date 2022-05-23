@@ -15,7 +15,7 @@ common = ["minimal", "async", "fs", "hashmap", "net", "ouroboros", "ptr", "regex
 full = ["common", "db", "ffi", "signal", "with-actix"]
 
 with-actix = ["actix", "actix-files", "actix-multipart", "actix-service",
-    "actix-web", "actix-web-actors", "actix-web-httpauth"]
+    "actix-web", "actix-web-actors", "actix-web-httpauth", "url"]
 with-bytes = ["bytes", "bytestring", "zerocopy"]
 with-hex = ["hex", "hex-literal"]
 with-log = ["log", "env-logger", "dotenv"]
@@ -23,7 +23,7 @@ with-serde = ["bytestring-serde", "chrono-serde", "json", "num", "serde", "serde
 with-rustls = ["rustls", "rustls-pemfile", "tokio-rustls"]
 
 async = ["async-stream", "async-trait", "flume", "future", "futures", "futures-util",
-	"mio", "pin-project", "tokio", "tokio-stream"]
+	"mio", "pin-project", "tokio", "tokio-stream", "tokio-util"]
 collections = ["maplit", "smallvec", "vec"]
 datetime = ["chrono", "num", "chrono-serde"]
 db = ["async", "collections", "datetime", "hashmap", "ouroboros", "rust-decimal",
@@ -35,7 +35,7 @@ future = []
 hashmap = ["ahash", "ritelinked", "maplit"]
 io = []
 json = ["base64", "serde-json", "num", "collections", "with-hex"]
-net = ["ipnetwork", "socket2"]
+net = ["ipnetwork", "socket2", "url"]
 num = []
 ptr = ["memoffset", "once-cell"]
 str = []
@@ -85,18 +85,20 @@ tokio = { version = "^1.18", features = ["full"], optional = true }
 tokio-rustls = { version = "^0.23", optional = true }
 tokio-stream = { version = "^0.1", features = [
     "time", "sync", "signal", "net", "fs", "io-util"], optional = true }
+tokio-util = { version = "^0.7", optional = true }
 
 hex = { version = "^0.4", optional = true }
 hex-literal = { version = "^0.3", optional = true }
 
 ipnetwork = { version = "^0.19", optional = true }
 socket2 = { version = "^0.4", optional = true }
+url = { version = "^2.2", optional = true }
 
 num-cpus = { version = "^1.13", package = "num_cpus", optional = true }
 memoffset = { version = "^0.6", optional = true }
 zerocopy = { version = "^0.6", optional = true }
 
-once-cell = { version = "^1.10", package = "once_cell", optional = true }
+once-cell = { version = "^1.11", package = "once_cell", optional = true }
 ouroboros = { version = "^0.15", optional = true }
 
 regex = { version = "^1.5", optional = true }
