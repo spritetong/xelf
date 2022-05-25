@@ -291,7 +291,7 @@ where
 
 pub struct RawSqlBuilder {
     db_backend: DbBackend,
-    builder: Box<dyn QueryBuilder>,
+    builder: Box<dyn QueryBuilder + Send>,
     writer: SqlWriter,
     values: Vec<Value>,
 }
@@ -300,7 +300,8 @@ impl RawSqlBuilder {
     pub fn new(db_backend: DbBackend) -> Self {
         Self {
             db_backend,
-            builder: db_backend.get_query_builder(),
+            // The conversion is safe.
+            builder: unsafe { mem::transmute(db_backend.get_query_builder()) },
             writer: SqlWriter::new(),
             values: Vec::new(),
         }
