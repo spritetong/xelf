@@ -267,13 +267,23 @@ pub trait DbConnExt: ConnectionTrait {
 #[async_trait]
 impl<C: ConnectionTrait> DbConnExt for C {}
 
-pub fn db_optional<P, C>(param: P, condition: C) -> Condition
+pub fn db_and_optional<P, C>(param: P, condition: C) -> Condition
 where
     P: Into<Value>,
     C: Into<ConditionExpression>,
 {
     Condition::any()
         .add(Expr::cust_with_values("0 = ?", [P::into(param)]))
+        .add(C::into(condition))
+}
+
+pub fn db_or_optional<P, C>(param: P, condition: C) -> Condition
+where
+    P: Into<Value>,
+    C: Into<ConditionExpression>,
+{
+    Condition::all()
+        .add(Expr::cust_with_values("0 <> ?", [P::into(param)]))
         .add(C::into(condition))
 }
 
