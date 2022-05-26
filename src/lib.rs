@@ -164,7 +164,7 @@ pub mod prelude {
     #[cfg(feature = "futures")]
     pub use ::futures::{
         self,
-        future::{join_all, try_join_all, TryFuture},
+        future::{self, join_all, try_join_all, TryFuture},
     };
     #[cfg(feature = "futures-util")]
     pub use ::futures_util::{SinkExt, StreamExt};

@@ -35,7 +35,7 @@ impl ArcHandleSet {
             RawEntryMut::Occupied(_) => {
                 #[cfg(debug_assertions)]
                 panic!(
-                    "Can not insert the handle ({}) of an Arc<{}>， it's already in the set.",
+                    "Can not insert the handle ({}) of an Arc<{}>, it's already in the set.",
                     handle,
                     std::any::type_name::<T>()
                 );
