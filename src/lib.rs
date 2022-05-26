@@ -23,28 +23,28 @@ pub mod vec;
 
 pub mod prelude {
     pub use crate::{
-        ok_or, ok_or_break, ok_or_continue, ok_or_return, some_or, some_or_break,
-        some_or_continue, some_or_return, uninit_assume_init, zeroed_init, If,
+        ok_or, ok_or_break, ok_or_continue, ok_or_return, some_or, some_or_break, some_or_continue,
+        some_or_return, uninit_assume_init, zeroed_init, If,
     };
 
     #[cfg(feature = "future")]
-    pub use ::std::{pin::Pin, future::Future};
+    pub use ::std::{future::Future, pin::Pin};
 
     #[cfg(feature = "chrono")]
     pub use ::std::time::{self, Duration, Instant, SystemTime, UNIX_EPOCH};
 
     #[cfg(feature = "ffi")]
-    pub use crate::{ffi::*, cstr};
+    pub use crate::{cstr, ffi::*};
     #[cfg(feature = "ffi")]
     pub use ::std::ffi;
 
+    #[cfg(feature = "io")]
+    pub use ::std::io::{self, prelude::*};
     #[cfg(feature = "fs")]
     pub use ::std::{
         fs,
         path::{self, Path, PathBuf},
     };
-    #[cfg(feature = "io")]
-    pub use ::std::io::{self, prelude::*};
 
     #[cfg(feature = "collections")]
     pub use crate::collections::*;
@@ -165,6 +165,7 @@ pub mod prelude {
     pub use ::futures::{
         self,
         future::{self, join_all, try_join_all, TryFuture},
+        stream::{BoxStream, LocalBoxStream, Stream},
     };
     #[cfg(feature = "futures-util")]
     pub use ::futures_util::{SinkExt, StreamExt};

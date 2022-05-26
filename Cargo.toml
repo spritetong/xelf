@@ -39,7 +39,7 @@ net = ["ipnetwork", "socket2", "url"]
 num = []
 ptr = ["memoffset", "once-cell"]
 str = []
-signal = ["tokio-stream"]
+signal = ["futures", "tokio-stream"]
 sync = ["arc-swap", "crossbeam", "num-cpus", "flume"]
 vec = []
 

@@ -1,4 +1,5 @@
-use ::tokio_stream::{Stream, StreamExt as _};
+use ::futures::{stream::BoxStream, StreamExt};
+use ::tokio_stream::StreamMap;
 
 /// Merge Ctrl+C and other quit signal into an asynchronous stream.
 ///
@@ -6,40 +7,49 @@ use ::tokio_stream::{Stream, StreamExt as _};
 ///
 /// ```
 /// use rsx::prelude::*;
-/// 
+///
 /// async fn test_ctrl_c() {
-///     let stream = rsx::signal::merge_ctrl_c(tokio_stream::empty());
-///     tokio::pin!(stream);
+///     let mut stream = rsx::signal::merge_ctrl_c(tokio_stream::empty().boxed());
 ///     println!("Please input Ctrl+C ...");
 ///     let _ = stream.next().await;
 ///     println!("Ok!");
 /// }
 /// ```
-pub fn merge_ctrl_c<S>(stream: S) -> impl Stream<Item = ()>
-where
-    S: Stream<Item = ()> + 'static,
-{
+pub fn merge_ctrl_c<'a>(stream: BoxStream<'a, ()>) -> BoxStream<'a, ()> {
     use tokio_stream::wrappers::*;
 
+    let mut map = StreamMap::new();
+    map.insert('0', stream);
+
     #[cfg(windows)]
-    let stream = {
+    {
         use tokio::signal::windows::*;
-        stream
-            .merge(CtrlBreakStream::new(ctrl_break().unwrap()))
-            .merge(CtrlCStream::new(ctrl_c().unwrap()))
-    };
+        map.insert('B', CtrlBreakStream::new(ctrl_break().unwrap()).boxed());
+        map.insert('C', CtrlCStream::new(ctrl_c().unwrap()).boxed());
+    }
 
     #[cfg(not(windows))]
-    let stream = {
+    {
         use tokio::signal::unix::{signal, SignalKind};
-        stream
-            .merge(SignalStream::new(signal(SignalKind::hangup()).unwrap()))
-            .merge(SignalStream::new(signal(SignalKind::interrupt()).unwrap()))
-            .merge(SignalStream::new(signal(SignalKind::quit()).unwrap()))
-            .merge(SignalStream::new(signal(SignalKind::terminate()).unwrap()))
-    };
+        map.insert(
+            'H',
+            SignalStream::new(signal(SignalKind::hangup()).unwrap()).boxed(),
+        );
+        map.insert(
+            'I',
+            SignalStream::new(signal(SignalKind::interrupt()).unwrap()).boxed(),
+        );
+        map.insert(
+            'Q',
+            SignalStream::new(signal(SignalKind::quit()).unwrap()).boxed(),
+        );
+        map.insert(
+            'T',
+            SignalStream::new(signal(SignalKind::terminate()).unwrap()).boxed(),
+        );
+    }
 
-    stream
+    map.map(|(_, x)| x).boxed()
 }
 
 #[cfg(test)]
@@ -48,8 +58,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_term_signal() {
-        let stream = merge_ctrl_c(tokio_stream::once(()));
-        tokio::pin!(stream);
+        let mut stream = merge_ctrl_c(tokio_stream::once(()).boxed());
         println!("Please input Ctrl+C ...");
         let _ = stream.next().await;
         println!("Ok!");
