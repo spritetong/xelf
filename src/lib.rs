@@ -89,7 +89,7 @@ pub mod prelude {
         borrow::{self, Borrow, BorrowMut, Cow},
         cell::{self, Cell, RefCell},
         cmp::{max, min},
-        convert::{self, AsMut, AsRef, From, Into, TryFrom, TryInto},
+        convert::{self, AsMut, AsRef, From, Infallible, Into, TryFrom, TryInto},
         env,
         fmt::{self, Display, Write as FmtWrite},
         iter,
@@ -168,7 +168,7 @@ pub mod prelude {
         stream::{BoxStream, LocalBoxStream, Stream},
     };
     #[cfg(feature = "futures-util")]
-    pub use ::futures_util::{SinkExt, StreamExt};
+    pub use ::futures_util::{self, SinkExt, StreamExt};
 
     #[cfg(feature = "hex")]
     pub use ::hex::{self, FromHex, ToHex};
