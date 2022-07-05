@@ -199,6 +199,9 @@ pub mod prelude {
     #[cfg(feature = "ouroboros")]
     pub use ::ouroboros::{self, self_referencing};
 
+    #[cfg(feature = "parking-lot")]
+    pub use ::parking_lot;
+
     #[cfg(feature = "pin-project")]
     pub use ::pin_project::{self, pin_project};
 

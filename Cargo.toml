@@ -23,7 +23,7 @@ with-serde = ["bytestring-serde", "chrono-serde", "json", "num", "serde", "serde
 with-rustls = ["rustls", "rustls-pemfile", "tokio-rustls"]
 
 async = ["async-stream", "async-trait", "flume", "future", "futures", "futures-util",
-	"mio", "pin-project", "tokio", "tokio-stream", "tokio-util"]
+	"mio", "parking-lot", "pin-project", "tokio", "tokio-stream", "tokio-util"]
 collections = ["maplit", "smallvec", "vec"]
 datetime = ["chrono", "num", "chrono-serde"]
 db = ["async", "collections", "datetime", "hashmap", "ouroboros", "rust-decimal",
@@ -40,7 +40,7 @@ num = []
 ptr = ["memoffset", "once-cell"]
 str = []
 signal = ["futures", "tokio-stream"]
-sync = ["arc-swap", "crossbeam", "num-cpus", "flume"]
+sync = ["arc-swap", "crossbeam", "flume", "num-cpus", "parking-lot"]
 vec = []
 
 bytestring-serde = ["bytestring/serde", "serde"]
@@ -116,6 +116,7 @@ rustls-pemfile = { version = "^1.0", optional = true }
 arc-swap = { version = "^1.5", optional = true }
 crossbeam = { version = "^0.8", optional = true }
 flume = { version = "^0.10", optional = true }
+parking-lot = { version = "^0.12", package = "parking_lot", optional = true }
 
 rust-decimal = { version = "^1.25", package = "rust_decimal", optional = true }
 sea-orm = { version = "^0.8", features = [
