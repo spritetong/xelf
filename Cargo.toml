@@ -58,7 +58,7 @@ actix-web-httpauth = { version = "^0.6", optional = true }
 ahash = { version = "^0.7", optional = true }
 maplit = { version = "^1.0", optional = true }
 ritelinked = { version = "^0.3", optional = true }
-smallvec = { version = "^1.8", optional = true }
+smallvec = { version = "^1.9", optional = true }
 
 bytes = { version = "^1.1", optional = true }
 bytestring = { version = "^1.1", optional = true }
@@ -90,7 +90,7 @@ tokio-util = { version = "^0.7", optional = true }
 hex = { version = "^0.4", optional = true }
 hex-literal = { version = "^0.3", optional = true }
 
-ipnetwork = { version = "^0.19", optional = true }
+ipnetwork = { version = "^0.20", optional = true }
 socket2 = { version = "^0.4", optional = true }
 url = { version = "^2.2", optional = true }
 
@@ -98,7 +98,7 @@ num-cpus = { version = "^1.13", package = "num_cpus", optional = true }
 memoffset = { version = "^0.6", optional = true }
 zerocopy = { version = "^0.6", optional = true }
 
-once-cell = { version = "^1.12", package = "once_cell", optional = true }
+once-cell = { version = "^1.13", package = "once_cell", optional = true }
 ouroboros = { version = "^0.15", optional = true }
 
 regex = { version = "^1.5", optional = true }
@@ -121,6 +121,6 @@ rust-decimal = { version = "^1.25", package = "rust_decimal", optional = true }
 sea-orm = { version = "^0.8", features = [
     "sqlx-postgres", "sqlx-sqlite", "runtime-tokio-rustls", "runtime-tokio"
     ], optional = true }
-sqlx = { version = "^0.5", features = [
+sqlx = { version = "^0.6", features = [
     "runtime-tokio-rustls", "postgres", "sqlite", "migrate", "any"
     ], optional = true }
