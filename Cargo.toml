@@ -101,7 +101,7 @@ zerocopy = { version = "^0.6", optional = true }
 once-cell = { version = "^1.13", package = "once_cell", optional = true }
 ouroboros = { version = "^0.15", optional = true }
 
-regex = { version = "^1.5", optional = true }
+regex = { version = "^1.6", optional = true }
 
 base64 = { version = "^0.13", optional = true }
 serde = { version = "^1.0", features = ["derive"], optional = true }
@@ -119,7 +119,7 @@ flume = { version = "^0.10", optional = true }
 parking-lot = { version = "^0.12", package = "parking_lot", optional = true }
 
 rust-decimal = { version = "^1.25", package = "rust_decimal", optional = true }
-sea-orm = { version = "^0.8", features = [
+sea-orm = { version = "^0.9", features = [
     "sqlx-postgres", "sqlx-sqlite", "runtime-tokio-rustls", "runtime-tokio"
     ], optional = true }
 sqlx = { version = "^0.6", features = [
