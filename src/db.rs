@@ -139,10 +139,12 @@ pub enum DbLockMode {
 }
 
 #[derive(Copy, Clone, PartialEq)]
-enum DbFuncEx {
+pub enum DbFunc {
     Now,
     Least,
     Greatest,
+    Upper,
+    Lower,
 }
 
 #[async_trait]
@@ -164,11 +166,15 @@ pub trait DbConnectionRsx: ConnectionTrait {
 #[async_trait]
 impl<C: ConnectionTrait> DbConnectionRsx for C {}
 
-pub trait DbBackendRsx {
+pub trait DbBackendRsx<X> {
     fn backend(&self) -> DbBackend;
 
     fn lock_table_sql(&self, table: &str, mode: DbLockMode) -> DbResult<String> {
         _db_lock_table_sql(self.backend(), table, mode)
+    }
+
+    fn func_name(&self, func: DbFunc) -> &'static str {
+        _db_builtin_func(self.backend(), func)
     }
 
     fn cust_with_values<S, V, I>(&self, s: S, v: I) -> SimpleExpr
@@ -201,14 +207,14 @@ pub trait DbBackendRsx {
     }
 
     fn now(&self) -> SimpleExpr {
-        Expr::cust(_db_builtin_func(self.backend(), DbFuncEx::Now))
+        Func::current_timestamp()
     }
 
     fn least<T>(&self, arg: T) -> SimpleExpr
     where
         T: Into<SimpleExpr>,
     {
-        Func::cust(IdenStr(_db_builtin_func(self.backend(), DbFuncEx::Least)))
+        Func::cust(IdenStr(_db_builtin_func(self.backend(), DbFunc::Least)))
             .args(vec![T::into(arg)])
     }
 
@@ -218,7 +224,7 @@ pub trait DbBackendRsx {
     {
         Func::cust(IdenStr(_db_builtin_func(
             self.backend(),
-            DbFuncEx::Greatest,
+            DbFunc::Greatest,
         )))
         .args(vec![T::into(arg)])
     }
@@ -238,17 +244,21 @@ pub trait DbBackendRsx {
     }
 }
 
-fn _db_builtin_func(backend: DbBackend, func: DbFuncEx) -> &'static str {
+fn _db_builtin_func(backend: DbBackend, func: DbFunc) -> &'static str {
     match backend {
         DbBackend::Postgres => match func {
-            DbFuncEx::Now => "now()",
-            DbFuncEx::Least => "least",
-            DbFuncEx::Greatest => "greatest",
+            DbFunc::Now => "CURRENT_TIMESTAMP",
+            DbFunc::Least => "LEAST",
+            DbFunc::Greatest => "GREATEST",
+            DbFunc::Upper => "UPPER",
+            DbFunc::Lower => "LOWER",
         },
         DbBackend::Sqlite => match func {
-            DbFuncEx::Now => "strftime('%Y-%m-%d %H:%M:%f000000', DATETIME('now'))",
-            DbFuncEx::Least => "min",
-            DbFuncEx::Greatest => "max",
+            DbFunc::Now => "CURRENT_TIMESTAMP",
+            DbFunc::Least => "MIN",
+            DbFunc::Greatest => "MAX",
+            DbFunc::Upper => "UPPER",
+            DbFunc::Lower => "LOWER",
         },
         _ => unimplemented!(),
     }
@@ -309,21 +319,14 @@ where
     }
 }
 
-impl DbBackendRsx for DbBackend {
+impl DbBackendRsx<DbBackend> for DbBackend {
     #[inline]
     fn backend(&self) -> DbBackend {
         *self
     }
 }
 
-impl DbBackendRsx for DatabaseConnection {
-    #[inline]
-    fn backend(&self) -> DbBackend {
-        self.get_database_backend()
-    }
-}
-
-impl DbBackendRsx for DatabaseTransaction {
+impl<C: ConnectionTrait> DbBackendRsx<()> for C {
     #[inline]
     fn backend(&self) -> DbBackend {
         self.get_database_backend()
