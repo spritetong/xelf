@@ -3,7 +3,7 @@ use crate::prelude::*;
 pub use sea_orm::{
     entity::prelude::*,
     sea_query::{
-        BinOper, ConditionExpression, DynIden, Expr, Func, Function, IntoIden, JoinOn,
+        BinOper, ConditionExpression, DynIden, Expr, Func, Function, IntoIden, JoinOn, LikeExpr,
         LogicalChainOper, Query, QueryBuilder, SimpleExpr, SqlWriter, UnOper,
     },
     ActiveValue, Condition, ConnectOptions, ConnectionTrait, Database, DatabaseBackend,
