@@ -26,15 +26,15 @@ async = ["async-stream", "async-trait", "flume", "future", "futures", "futures-u
 	"mio", "parking-lot", "pin-project", "tokio", "tokio-stream", "tokio-util"]
 collections = ["maplit", "smallvec", "vec"]
 datetime = ["chrono", "num", "chrono-serde"]
-db = ["async", "collections", "datetime", "hashmap", "ouroboros", "rust-decimal",
-    "sea-orm", "shellexpand", "sqlx", "with-bytes", "with-serde", "with-rustls"]
+db = ["async", "collections", "datetime", "hashmap", "minimal", "ouroboros", "ptr", "regex",
+    "rust-decimal", "sync", "sea-orm", "shellexpand", "sqlx", "with-bytes", "with-serde", "with-rustls"]
 derive = ["derive-more", "num-enum", "smart-default", "strum"]
 fs = ["io", "tempfile"]
 ffi = ["ritelinked", "sync"]
 future = []
 hashmap = ["ahash", "ritelinked", "maplit"]
 io = []
-json = ["base64", "serde-json", "num", "collections", "with-hex"]
+json = ["base64", "serde", "serde-json", "num", "collections", "with-hex"]
 net = ["ipnetwork", "socket2", "url"]
 num = []
 ptr = ["memoffset", "once-cell"]

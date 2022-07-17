@@ -140,33 +140,17 @@ pub enum DbLockMode {
 
 #[derive(Copy, Clone, PartialEq)]
 pub enum DbFunc {
-    Now,
     Least,
     Greatest,
+    /// Func::current_timestamp()
+    Now,
+    /// Func::upper()
     Upper,
+    /// Func::lower()
     Lower,
 }
 
-#[async_trait]
-pub trait DbConnectionRsx: ConnectionTrait {
-    async fn lock_table(&self, table: &str, mode: DbLockMode) -> DbResult<()> {
-        let backend = self.get_database_backend();
-        match backend.lock_table_sql(table, mode) {
-            Ok(sql) => {
-                if !sql.is_empty() {
-                    self.execute(Statement::from_string(backend, sql)).await?;
-                }
-            }
-            _ => return Err(DbErr::Custom("no implementation".to_owned())),
-        }
-        Ok(())
-    }
-}
-
-#[async_trait]
-impl<C: ConnectionTrait> DbConnectionRsx for C {}
-
-pub trait DbBackendRsx<X> {
+pub trait DbBackendTrait {
     fn backend(&self) -> DbBackend;
 
     fn lock_table_sql(&self, table: &str, mode: DbLockMode) -> DbResult<String> {
@@ -222,27 +206,32 @@ pub trait DbBackendRsx<X> {
     where
         T: Into<SimpleExpr>,
     {
-        Func::cust(IdenStr(_db_builtin_func(
-            self.backend(),
-            DbFunc::Greatest,
-        )))
-        .args(vec![T::into(arg)])
-    }
-
-    fn upper<T>(&self, arg: T) -> SimpleExpr
-    where
-        T: Into<SimpleExpr>,
-    {
-        SimpleExpr::FunctionCall(Function::Upper, vec![T::into(arg)])
-    }
-
-    fn lower<T>(&self, arg: T) -> SimpleExpr
-    where
-        T: Into<SimpleExpr>,
-    {
-        SimpleExpr::FunctionCall(Function::Lower, vec![T::into(arg)])
+        Func::cust(IdenStr(_db_builtin_func(self.backend(), DbFunc::Greatest)))
+            .args(vec![T::into(arg)])
     }
 }
+
+#[async_trait]
+pub trait DbConnectionTrait: ConnectionTrait + DbBackendTrait {
+    async fn lock_table(&self, table: &str, mode: DbLockMode) -> DbResult<()> {
+        let backend = self.backend();
+        match backend.lock_table_sql(table, mode) {
+            Ok(sql) => {
+                if !sql.is_empty() {
+                    self.execute(Statement::from_string(backend, sql)).await?;
+                }
+            }
+            _ => return Err(DbErr::Custom("no implementation".to_owned())),
+        }
+        Ok(())
+    }
+}
+
+#[async_trait]
+impl DbConnectionTrait for DatabaseConnection {}
+
+#[async_trait]
+impl DbConnectionTrait for DatabaseTransaction {}
 
 fn _db_builtin_func(backend: DbBackend, func: DbFunc) -> &'static str {
     match backend {
@@ -319,14 +308,21 @@ where
     }
 }
 
-impl DbBackendRsx<DbBackend> for DbBackend {
+impl DbBackendTrait for DbBackend {
     #[inline]
     fn backend(&self) -> DbBackend {
         *self
     }
 }
 
-impl<C: ConnectionTrait> DbBackendRsx<()> for C {
+impl DbBackendTrait for DatabaseConnection {
+    #[inline]
+    fn backend(&self) -> DbBackend {
+        self.get_database_backend()
+    }
+}
+
+impl DbBackendTrait for DatabaseTransaction {
     #[inline]
     fn backend(&self) -> DbBackend {
         self.get_database_backend()
