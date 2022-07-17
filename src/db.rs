@@ -3,8 +3,8 @@ use crate::prelude::*;
 pub use sea_orm::{
     entity::prelude::*,
     sea_query::{
-        BinOper, ConditionExpression, DynIden, Expr, Func, IntoIden, JoinOn, LogicalChainOper,
-        Query, QueryBuilder, SimpleExpr, SqlWriter, UnOper,
+        BinOper, ConditionExpression, DynIden, Expr, Func, Function, IntoIden, JoinOn,
+        LogicalChainOper, Query, QueryBuilder, SimpleExpr, SqlWriter, UnOper,
     },
     ActiveValue, Condition, ConnectOptions, ConnectionTrait, Database, DatabaseBackend,
     DatabaseTransaction, DbBackend, DbErr, ExecResult, FromQueryResult, IntoActiveModel, JoinType,
@@ -119,6 +119,15 @@ where
 
 ////////////////////////////////////////////////////////////////////////////////
 
+#[derive(Clone, Deref, Debug)]
+pub struct IdenStr<T: AsRef<str> + Clone + Send + Sync>(pub T);
+
+impl<T: AsRef<str> + Clone + Send + Sync> Iden for IdenStr<T> {
+    fn unquoted(&self, s: &mut dyn std::fmt::Write) {
+        let _ = s.write_str(self.0.as_ref());
+    }
+}
+
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum DbLockMode {
     /// Protects a table from concurrent data changes. (SQLite: BEGIN)
@@ -129,127 +138,15 @@ pub enum DbLockMode {
     AccessExclusive,
 }
 
-#[derive(Clone, Deref, Debug)]
-pub struct IdenStr<T: AsRef<str> + Clone + Send + Sync>(pub T);
-
-impl<T: AsRef<str> + Clone + Send + Sync> Iden for IdenStr<T> {
-    fn unquoted(&self, s: &mut dyn std::fmt::Write) {
-        let _ = s.write_str(self.0.as_ref());
-    }
-}
-
-pub trait DbBackendExt<C> {
-    fn builtin_func(&self, name: &str) -> &'static str;
-
-    fn func(&self, name: &str) -> SimpleExpr;
-
-    fn func_unary<T>(&self, name: &str, arg: T) -> SimpleExpr
-    where
-        T: Into<SimpleExpr>;
-
-    fn func_with_args<T, I>(&self, name: &str, args: I) -> SimpleExpr
-    where
-        T: Into<SimpleExpr>,
-        I: IntoIterator<Item = T>;
-
-    fn lock_table_sql(&self, table: &str, mode: DbLockMode) -> DbResult<String>;
-}
-
-impl DbBackendExt<DbBackend> for DbBackend {
-    fn builtin_func(&self, name: &str) -> &'static str {
-        match *self {
-            DbBackend::Postgres => match name {
-                "now()" => return "now()",
-                "least" => return "least",
-                "greatest" => return "greatest",
-                "upper" => return "upper",
-                "lower" => return "lower",
-                _ => (),
-            },
-            DbBackend::Sqlite => match name {
-                "now()" => return "strftime('%Y-%m-%d %H:%M:%f000000', DATETIME('now'))",
-                "least" => return "min",
-                "greatest" => return "max",
-                "upper" => return "upper",
-                "lower" => return "lower",
-                _ => (),
-            },
-            _ => (),
-        }
-
-        panic!("No built-in function {} for {:?}", name, self);
-    }
-
-    fn func(&self, name: &str) -> SimpleExpr {
-        Expr::cust(self.builtin_func(name))
-    }
-
-    fn func_unary<T>(&self, name: &str, arg: T) -> SimpleExpr
-    where
-        T: Into<SimpleExpr>,
-    {
-        Func::cust(IdenStr(self.builtin_func(name))).args(vec![T::into(arg)])
-    }
-
-    fn func_with_args<T, I>(&self, name: &str, args: I) -> SimpleExpr
-    where
-        T: Into<SimpleExpr>,
-        I: IntoIterator<Item = T>,
-    {
-        Func::cust(IdenStr(self.builtin_func(name))).args(args)
-    }
-
-    fn lock_table_sql(&self, table: &str, mode: DbLockMode) -> DbResult<String> {
-        match *self {
-            DbBackend::Postgres => {
-                if !table.is_empty() {
-                    let mode = match mode {
-                        DbLockMode::Share => "SHARE",
-                        DbLockMode::Exclusive => "EXCLUSIVE",
-                        DbLockMode::AccessExclusive => "ACCESS EXCLUSIVE",
-                    };
-                    Ok(format!("LOCK TABLE {} IN {} MODE;", table, mode))
-                } else {
-                    Ok(String::new())
-                }
-            }
-            DbBackend::Sqlite => Ok(String::new()),
-            _ => Err(DbErr::Custom("no implementation".to_owned())),
-        }
-    }
-}
-
-impl<C: ConnectionTrait> DbBackendExt<()> for C {
-    fn builtin_func(&self, name: &str) -> &'static str {
-        self.get_database_backend().builtin_func(name)
-    }
-
-    fn func(&self, name: &str) -> SimpleExpr {
-        self.get_database_backend().func(name)
-    }
-
-    fn func_unary<T>(&self, name: &str, arg: T) -> SimpleExpr
-    where
-        T: Into<SimpleExpr>,
-    {
-        self.get_database_backend().func_unary(name, arg)
-    }
-
-    fn func_with_args<T, I>(&self, name: &str, args: I) -> SimpleExpr
-    where
-        T: Into<SimpleExpr>,
-        I: IntoIterator<Item = T>,
-    {
-        self.get_database_backend().func_with_args(name, args)
-    }
-
-    fn lock_table_sql(&self, table: &str, mode: DbLockMode) -> DbResult<String> {
-        self.get_database_backend().lock_table_sql(table, mode)
-    }
+#[derive(Copy, Clone, PartialEq)]
+enum DbFuncEx {
+    Now,
+    Least,
+    Greatest,
 }
 
 #[async_trait]
-pub trait DbConnExt: ConnectionTrait {
+pub trait DbConnectionRsx: ConnectionTrait {
     async fn lock_table(&self, table: &str, mode: DbLockMode) -> DbResult<()> {
         let backend = self.get_database_backend();
         match backend.lock_table_sql(table, mode) {
@@ -265,26 +162,172 @@ pub trait DbConnExt: ConnectionTrait {
 }
 
 #[async_trait]
-impl<C: ConnectionTrait> DbConnExt for C {}
+impl<C: ConnectionTrait> DbConnectionRsx for C {}
 
-pub fn db_and_optional<P, C>(param: P, condition: C) -> Condition
-where
-    P: Into<Value>,
-    C: Into<ConditionExpression>,
-{
-    Condition::any()
-        .add(Expr::cust_with_values("0 = ?", [P::into(param)]))
-        .add(C::into(condition))
+pub trait DbBackendRsx {
+    fn backend(&self) -> DbBackend;
+
+    fn lock_table_sql(&self, table: &str, mode: DbLockMode) -> DbResult<String> {
+        _db_lock_table_sql(self.backend(), table, mode)
+    }
+
+    fn cust_with_values<S, V, I>(&self, s: S, v: I) -> SimpleExpr
+    where
+        S: AsRef<str>,
+        V: Into<Value>,
+        I: IntoIterator<Item = V>,
+    {
+        _db_cust_with_values(self.backend(), s.as_ref(), v)
+    }
+
+    fn and_optional<P, C>(&self, param: P, condition: C) -> Condition
+    where
+        P: Into<Value>,
+        C: Into<ConditionExpression>,
+    {
+        Condition::any()
+            .add(self.cust_with_values("0 = ?", [P::into(param)]))
+            .add(C::into(condition))
+    }
+
+    fn or_optional<P, C>(&self, param: P, condition: C) -> Condition
+    where
+        P: Into<Value>,
+        C: Into<ConditionExpression>,
+    {
+        Condition::all()
+            .add(self.cust_with_values("0 <> ?", [P::into(param)]))
+            .add(C::into(condition))
+    }
+
+    fn now(&self) -> SimpleExpr {
+        Expr::cust(_db_builtin_func(self.backend(), DbFuncEx::Now))
+    }
+
+    fn least<T>(&self, arg: T) -> SimpleExpr
+    where
+        T: Into<SimpleExpr>,
+    {
+        Func::cust(IdenStr(_db_builtin_func(self.backend(), DbFuncEx::Least)))
+            .args(vec![T::into(arg)])
+    }
+
+    fn greatest<T>(&self, arg: T) -> SimpleExpr
+    where
+        T: Into<SimpleExpr>,
+    {
+        Func::cust(IdenStr(_db_builtin_func(
+            self.backend(),
+            DbFuncEx::Greatest,
+        )))
+        .args(vec![T::into(arg)])
+    }
+
+    fn upper<T>(&self, arg: T) -> SimpleExpr
+    where
+        T: Into<SimpleExpr>,
+    {
+        SimpleExpr::FunctionCall(Function::Upper, vec![T::into(arg)])
+    }
+
+    fn lower<T>(&self, arg: T) -> SimpleExpr
+    where
+        T: Into<SimpleExpr>,
+    {
+        SimpleExpr::FunctionCall(Function::Lower, vec![T::into(arg)])
+    }
 }
 
-pub fn db_or_optional<P, C>(param: P, condition: C) -> Condition
+fn _db_builtin_func(backend: DbBackend, func: DbFuncEx) -> &'static str {
+    match backend {
+        DbBackend::Postgres => match func {
+            DbFuncEx::Now => "now()",
+            DbFuncEx::Least => "least",
+            DbFuncEx::Greatest => "greatest",
+        },
+        DbBackend::Sqlite => match func {
+            DbFuncEx::Now => "strftime('%Y-%m-%d %H:%M:%f000000', DATETIME('now'))",
+            DbFuncEx::Least => "min",
+            DbFuncEx::Greatest => "max",
+        },
+        _ => unimplemented!(),
+    }
+}
+
+fn _db_lock_table_sql(backend: DbBackend, table: &str, mode: DbLockMode) -> DbResult<String> {
+    match backend {
+        DbBackend::Postgres => {
+            if !table.is_empty() {
+                let mode = match mode {
+                    DbLockMode::Share => "SHARE",
+                    DbLockMode::Exclusive => "EXCLUSIVE",
+                    DbLockMode::AccessExclusive => "ACCESS EXCLUSIVE",
+                };
+                Ok(format!("LOCK TABLE {} IN {} MODE;", table, mode))
+            } else {
+                Ok(String::new())
+            }
+        }
+        DbBackend::Sqlite => Ok(String::new()),
+        _ => Err(DbErr::Custom("no implementation".to_owned())),
+    }
+}
+
+pub fn _db_cust_with_values<V, I>(backend: DbBackend, s: &str, v: I) -> SimpleExpr
 where
-    P: Into<Value>,
-    C: Into<ConditionExpression>,
+    V: Into<Value>,
+    I: IntoIterator<Item = V>,
 {
-    Condition::all()
-        .add(Expr::cust_with_values("0 <> ?", [P::into(param)]))
-        .add(C::into(condition))
+    unsafe {
+        let s = s.as_bytes();
+        let mut no = 1;
+        let mut buf = Vec::<u8>::with_capacity(s.len() + 32);
+        let mut i = 0;
+        while i < s.len() {
+            let c = *s.get_unchecked(i);
+            if c == ('?' as u8) {
+                if i + 1 < s.len() && (*s.get_unchecked(i + 1) == ('?' as u8)) {
+                    buf.put_u8('?' as u8);
+                    i += 1;
+                } else {
+                    match backend {
+                        DbBackend::Postgres => {
+                            write!(&mut buf, "${}", no).unwrap();
+                        }
+                        DbBackend::Sqlite | DbBackend::MySql => {
+                            buf.put_u8(c);
+                        }
+                    }
+                    no += 1;
+                }
+            } else {
+                buf.put_u8(c);
+            }
+            i += 1;
+        }
+        Expr::cust_with_values(String::from_utf8_unchecked(buf).as_str(), v)
+    }
+}
+
+impl DbBackendRsx for DbBackend {
+    #[inline]
+    fn backend(&self) -> DbBackend {
+        *self
+    }
+}
+
+impl DbBackendRsx for DatabaseConnection {
+    #[inline]
+    fn backend(&self) -> DbBackend {
+        self.get_database_backend()
+    }
+}
+
+impl DbBackendRsx for DatabaseTransaction {
+    #[inline]
+    fn backend(&self) -> DbBackend {
+        self.get_database_backend()
+    }
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -369,12 +412,13 @@ impl RawSqlBuilder {
         self.write_expr(&Expr::cust(s));
     }
 
-    pub fn write_with_args<V, I>(&mut self, s: &str, v: I)
+    pub fn write_with_args<S, V, I>(&mut self, s: S, v: I)
     where
+        S: AsRef<str>,
         V: Into<Value>,
         I: IntoIterator<Item = V>,
     {
-        self.write_expr(&Expr::cust_with_values(s, v));
+        self.write_expr(&self.db_backend.cust_with_values(s, v));
     }
 
     pub fn expr_to_string(db_backend: DbBackend, expr: &SimpleExpr) -> String {
@@ -427,7 +471,7 @@ impl SqlString {
 
     pub fn into_shared(self) -> ByteString {
         match self {
-            Self::String(v) => unsafe { ByteString::from_bytes_unchecked(Bytes::from(v)) },
+            Self::String(v) => ByteString::from(v),
             Self::Shared(v) => v,
         }
     }
@@ -962,9 +1006,8 @@ impl OrderByHelper {
 
 #[cfg(test)]
 mod tests {
-    use crate::db::tests::user::FaRecState;
-
     use super::*;
+    use crate::db::tests::user::FaRecState;
 
     mod user {
         use super::*;
@@ -1042,8 +1085,22 @@ mod tests {
 
     #[test]
     fn test_sql_helper() {
-        let cache = SqlCache::new();
+        assert_eq!(
+            Query::select()
+                .expr(DbBackend::Postgres.cust_with_values("? '??' ?", vec!["a", "b"]))
+                .to_owned()
+                .to_string(sea_orm::sea_query::PostgresQueryBuilder),
+            "SELECT 'a' '?' 'b'"
+        );
+        assert_eq!(
+            Query::select()
+                .expr(DbBackend::Sqlite.cust_with_values("? '??' ?", vec!["a", "b"]))
+                .to_owned()
+                .to_string(sea_orm::sea_query::SqliteQueryBuilder),
+            "SELECT 'a' '?' 'b'"
+        );
 
+        let cache = SqlCache::new();
         for _ in 0..10 {
             let mut q = cache.get("SQL1", DbBackend::Postgres, |be| {
                 let mut w = RawSqlBuilder::new(be);
