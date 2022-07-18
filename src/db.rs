@@ -167,7 +167,7 @@ pub trait DbBackendTrait {
         V: Into<Value>,
         I: IntoIterator<Item = V>,
     {
-        _db_cust_with_values(self.backend(), s.as_ref(), v)
+        Expr::cust_with_values(_db_cust_with_values(self.backend(), s.as_ref()).as_str(), v)
     }
 
     fn and_optional<P, C>(&self, param: P, condition: C) -> Condition
@@ -272,40 +272,30 @@ fn _db_lock_table_sql(backend: DbBackend, table: &str, mode: DbLockMode) -> DbRe
     }
 }
 
-pub fn _db_cust_with_values<V, I>(backend: DbBackend, s: &str, v: I) -> SimpleExpr
-where
-    V: Into<Value>,
-    I: IntoIterator<Item = V>,
-{
-    unsafe {
-        let s = s.as_bytes();
-        let mut no = 1;
-        let mut buf = Vec::<u8>::with_capacity(s.len() + 32);
-        let mut i = 0;
-        while i < s.len() {
-            let c = *s.get_unchecked(i);
-            if c == ('?' as u8) {
-                if i + 1 < s.len() && (*s.get_unchecked(i + 1) == ('?' as u8)) {
-                    buf.put_u8('?' as u8);
-                    i += 1;
-                } else {
-                    match backend {
-                        DbBackend::Postgres => {
-                            write!(&mut buf, "${}", no).unwrap();
-                        }
-                        DbBackend::Sqlite | DbBackend::MySql => {
-                            buf.put_u8(c);
-                        }
-                    }
-                    no += 1;
+pub fn _db_cust_with_values(backend: DbBackend, s: &str) -> String {
+    let mut s = s.as_bytes();
+    let mut no = 1;
+    let mut buf = Vec::<u8>::with_capacity(s.len() + 32);
+    while let Some(i) = s.iter().position(|&x| x == '?' as u8) {
+        if s.get(i + 1) == Some(&('?' as u8)) {
+            buf.put_slice(&s[..i + 1]);
+            s = &s[i + 2..];
+        } else {
+            buf.put_slice(&s[..i]);
+            s = &s[i + 1..];
+            match backend {
+                DbBackend::Postgres => {
+                    write!(&mut buf, "${}", no).unwrap();
                 }
-            } else {
-                buf.put_u8(c);
+                DbBackend::Sqlite | DbBackend::MySql => {
+                    buf.put_u8('?' as u8);
+                }
             }
-            i += 1;
+            no += 1;
         }
-        Expr::cust_with_values(String::from_utf8_unchecked(buf).as_str(), v)
     }
+    buf.put_slice(s);
+    String::from_utf8(buf).unwrap()
 }
 
 impl DbBackendTrait for DbBackend {
