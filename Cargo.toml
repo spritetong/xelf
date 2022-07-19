@@ -56,12 +56,12 @@ actix-web-actors = { version = "^4.1", optional = true }
 actix-web-httpauth = { version = "^0.6", optional = true }
 
 ahash = { version = "^0.7", optional = true }
-maplit = { version = "^1.0", optional = true }
+maplit = { version = "^1", optional = true }
 ritelinked = { version = "^0.3", optional = true }
-smallvec = { version = "^1.9", optional = true }
+smallvec = { version = "^1", optional = true }
 
-bytes = { version = "^1.1", optional = true }
-bytestring = { version = "^1.1", optional = true }
+bytes = { version = "^1", optional = true }
+bytestring = { version = "^1", optional = true }
 
 chrono = { version = "^0.4", optional = true }
 
@@ -73,15 +73,15 @@ strum = { version = "^0.24", features = ["derive"], optional = true }
 dotenv = { version = "^0.15", optional = true }
 env-logger = { version = "^0.9", package = "env_logger", optional = true }
 log = { version = "^0.4", optional = true }
-shellexpand = { version = "^2.1", optional = true }
+shellexpand = { version = "^2", optional = true }
 
 async-stream = { version = "^0.3", optional = true }
 async-trait = { version = "^0.1", optional = true }
 futures = { version = "^0.3", optional = true }
 futures-util = { version = "^0.3", optional = true }
 mio = { version = "^0.8", optional = true }
-pin-project = { version = "^1.0", optional = true }
-tokio = { version = "^1.19", features = ["full"], optional = true }
+pin-project = { version = "^1", optional = true }
+tokio = { version = "^1", features = ["full"], optional = true }
 tokio-rustls = { version = "^0.23", optional = true }
 tokio-stream = { version = "^0.1", features = [
     "time", "sync", "signal", "net", "fs", "io-util"], optional = true }
@@ -94,31 +94,31 @@ ipnetwork = { version = "^0.20", optional = true }
 socket2 = { version = "^0.4", optional = true }
 url = { version = "^2.2", optional = true }
 
-num-cpus = { version = "^1.13", package = "num_cpus", optional = true }
+num-cpus = { version = "^1", package = "num_cpus", optional = true }
 memoffset = { version = "^0.6", optional = true }
 zerocopy = { version = "^0.6", optional = true }
 
-once-cell = { version = "^1.13", package = "once_cell", optional = true }
+once-cell = { version = "^1", package = "once_cell", optional = true }
 ouroboros = { version = "^0.15", optional = true }
 
-regex = { version = "^1.6", optional = true }
+regex = { version = "^1", optional = true }
 
 base64 = { version = "^0.13", optional = true }
-serde = { version = "^1.0", features = ["derive"], optional = true }
-serde-json = { version = "^1.0", package = "serde_json", optional = true }
+serde = { version = "^1", features = ["derive"], optional = true }
+serde-json = { version = "^1", package = "serde_json", optional = true }
 serde-repr = { version = "^0.1", package = "serde_repr", optional = true }
 
-tempfile = { version = "^3.3", optional = true }
+tempfile = { version = "^3", optional = true }
 
 rustls = { version = "^0.20", features = ["dangerous_configuration"], optional = true }
 rustls-pemfile = { version = "^1.0", optional = true }
 
-arc-swap = { version = "^1.5", optional = true }
+arc-swap = { version = "^1", optional = true }
 crossbeam = { version = "^0.8", optional = true }
 flume = { version = "^0.10", optional = true }
 parking-lot = { version = "^0.12", package = "parking_lot", optional = true }
 
-rust-decimal = { version = "^1.25", package = "rust_decimal", optional = true }
+rust-decimal = { version = "^1", package = "rust_decimal", optional = true }
 sea-orm = { version = "^0.9", features = [
     "sqlx-postgres", "sqlx-sqlite", "runtime-tokio-rustls", "runtime-tokio"
     ], optional = true }
