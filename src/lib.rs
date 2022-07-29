@@ -36,7 +36,7 @@ pub mod prelude {
     #[cfg(feature = "ffi")]
     pub use crate::{cstr, ffi::*};
     #[cfg(feature = "ffi")]
-    pub use ::std::ffi;
+    pub use ::std::ffi::{self, CStr, CString};
 
     #[cfg(feature = "io")]
     pub use ::std::io::{self, prelude::*};
