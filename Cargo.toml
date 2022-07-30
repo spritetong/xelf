@@ -1,6 +1,6 @@
 [package]
 name = "rsx"
-version = "0.2.4"
+version = "0.3.0"
 edition = "2021"
 
 [lib]
@@ -26,10 +26,11 @@ async = ["async-stream", "async-trait", "flume", "future", "futures", "futures-u
 	"mio", "parking-lot", "pin-project", "tokio", "tokio-stream", "tokio-util"]
 collections = ["maplit", "smallvec", "vec"]
 datetime = ["chrono", "num", "chrono-serde"]
-db = ["async", "collections", "datetime", "hashmap", "minimal", "ouroboros", "ptr", "regex",
-    "rust-decimal", "sync", "sea-orm", "shellexpand", "sqlx", "with-bytes", "with-serde", "with-rustls"]
+db = ["async", "collections", "datetime", "hashmap", "minimal", "ouroboros", "regex",
+    "rust-decimal", "snowflake", "str", "sync", "sea-orm", "sqlx", "with-bytes",
+    "with-serde", "with-rustls"]
 derive = ["derive-more", "num-enum", "smart-default", "strum"]
-fs = ["io", "tempfile"]
+fs = ["io", "path-absolutize", "tempfile"]
 ffi = ["ritelinked", "sync"]
 future = []
 hashmap = ["ahash", "ritelinked", "maplit"]
@@ -38,7 +39,8 @@ json = ["base64", "serde", "serde-json", "num", "collections", "with-hex"]
 net = ["ipnetwork", "socket2", "url"]
 num = []
 ptr = ["memoffset", "once-cell"]
-str = []
+snowflake = ["smart-default"]
+str = ["ptr"]
 signal = ["futures", "tokio-stream"]
 sync = ["arc-swap", "crossbeam", "flume", "num-cpus", "parking-lot"]
 vec = []
@@ -73,7 +75,7 @@ strum = { version = "^0.24", features = ["derive"], optional = true }
 dotenv = { version = "^0.15", optional = true }
 env-logger = { version = "^0.9", package = "env_logger", optional = true }
 log = { version = "^0.4", optional = true }
-shellexpand = { version = "^2", optional = true }
+path-absolutize = { version = "^3", optional = true }
 
 async-stream = { version = "^0.3", optional = true }
 async-trait = { version = "^0.1", optional = true }

@@ -7,7 +7,7 @@ pub trait VecRsx {
     fn resize_uninit(&mut self, new_len: usize);
 }
 
-impl<T: Sized + Copy> VecRsx for Vec<T> {
+impl<T: Sized + Copy + Default> VecRsx for Vec<T> {
     #[inline]
     fn with_length(len: usize) -> Self {
         let mut v = Self::with_capacity(len);

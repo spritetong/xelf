@@ -642,52 +642,45 @@ impl From<Statement> for SqlHelper {
 
         // Get SQL block indices.
         let mut sql_bytes = Bytes::new();
-        let mut fixed_off = 0usize;
-        let mut left = Bytes::new();
-        let _ = shellexpand::env_with_context_no_errors::<str, &str, _>(sql.as_str(), |name| {
-            if name.starts_with(':') {
-                if left.is_empty() {
-                    sql_bytes = Bytes::copy_from_slice(sql.as_bytes());
-                    // Fixed offset between "sql_bytes" and "sql"
-                    fixed_off = sql_bytes.as_ptr().wrapping_sub(sql.as_ptr() as usize) as usize;
-                    left = sql_bytes.clone();
-                }
+        let mut start = 0;
+        static RE: Lazy<Regex> =
+            Lazy::new(|| Regex::new(r#"(?:\{\{|\}\}|\{:[[:word:]]+\})"#).unwrap());
+        while let Some(m) = RE.find_at(sql.as_str(), start) {
+            if sql_bytes.is_empty() {
+                sql_bytes = Bytes::copy_from_slice(sql.as_bytes());
+            }
 
-                let mut right = left.split_off(
-                    name.as_ptr()
-                        .wrapping_add(fixed_off)
-                        .wrapping_sub(left.as_ptr() as usize)
-                        .wrapping_sub(2) as usize,
-                );
+            if m.end() - m.start() == 2 {
+                // "{{" or "}}"
+                sql_slices.push(unsafe {
+                    ByteString::from_bytes_unchecked(sql_bytes.slice(start..m.start() + 1))
+                });
+            } else {
                 // Push SQL text before the parameter.
-                sql_slices.push(unsafe { ByteString::from_bytes_unchecked(left.clone()) });
+                sql_slices.push(unsafe {
+                    ByteString::from_bytes_unchecked(sql_bytes.slice(start..m.start()))
+                });
 
-                // Save the left slice.
-                left = right.split_off(name.len() + 3);
+                // Push the parameter: {:<name>}
+                sql_slices
+                    .push(unsafe { ByteString::from_bytes_unchecked(sql_bytes.slice(m.range())) });
 
-                // Push the parameter: ${<name>}
-                sql_slices.push(unsafe { ByteString::from_bytes_unchecked(right.clone()) });
-
+                let name = unsafe {
+                    ByteString::from_bytes_unchecked(sql_bytes.slice(m.start() + 1..m.end() - 1))
+                };
                 params
                     .raw_entry_mut()
-                    .from_key(name)
-                    .or_insert_with(move || {
-                        (
-                            unsafe {
-                                ByteString::from_bytes_unchecked(right.slice(2..right.len() - 1))
-                            },
-                            ParamIndices::new(),
-                        )
-                    })
+                    .from_key(&name)
+                    .or_insert_with(move || (name, ParamIndices::new()))
                     .1
                     .push(ParamIndex::Sql((sql_slices.len() - 1) as u32));
             }
-            None
-        });
-        let sql = if sql_slices.is_empty() {
+            start = m.end();
+        }
+        let sql = if sql_bytes.is_empty() {
             SqlString::String(sql)
         } else {
-            sql_slices.push(unsafe { ByteString::from_bytes_unchecked(left) });
+            sql_slices.push(unsafe { ByteString::from_bytes_unchecked(sql_bytes.slice(start..)) });
             SqlString::Shared(unsafe { ByteString::from_bytes_unchecked(sql_bytes) })
         };
 
@@ -1107,15 +1100,17 @@ mod tests {
 
             let mut q = cache.get("SQL2", DbBackend::Postgres, |be| {
                 let mut w = RawSqlBuilder::new(be);
-                w.write("SELECT * FROM t_user\n");
-                w.write_with_args("WHERE name = ?\n", [":name"]);
-                w.write("${:order_by}\n");
-                w.write("${:limit}\n");
-                w.write("${:order_by}\n");
+                w.write("SELECT {{*}} FROM t_user\n");
+                w.write_with_args("WHERE name = ? AND nickname = ?\n", [":name", "Mike"]);
+                w.write_with_args("AND mobile = ?\n", [":mobile"]);
+                w.write("{:order_by}\n");
+                w.write("{:limit}\n");
+                w.write("{:order_by}\n");
                 w.write("FOR UPDATE");
                 SqlHelper::from(w)
             });
             q.bind_param(":name", "Tom");
+            q.bind_param(":mobile", "123456789");
             q.bind_param(":order_by", "ORDER BY name");
             q.bind_param(":limit", "LIMIT 100");
 
@@ -1129,7 +1124,7 @@ mod tests {
 
             assert_eq!(
                 &statement.sql,
-                "SELECT * FROM t_user\nWHERE name = $1\nORDER BY name\nLIMIT 100\nORDER BY name\nFOR UPDATE"
+                "SELECT {*} FROM t_user\nWHERE name = $1 AND nickname = $2\nAND mobile = $3\nORDER BY name\nLIMIT 100\nORDER BY name\nFOR UPDATE"
             );
         }
     }

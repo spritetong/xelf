@@ -6,16 +6,18 @@ pub mod datetime;
 pub mod db;
 #[cfg(feature = "ffi")]
 pub mod ffi;
+#[cfg(feature = "fs")]
+pub mod fs;
 #[cfg(feature = "json")]
 pub mod json;
 #[cfg(feature = "num")]
 pub mod num;
-#[cfg(feature = "ptr")]
-pub mod ptr;
 #[cfg(feature = "serde")]
 pub mod serde;
 #[cfg(feature = "signal")]
 pub mod signal;
+#[cfg(feature = "snowflake")]
+pub mod snowflake;
 #[cfg(feature = "str")]
 pub mod str;
 #[cfg(feature = "vec")]
@@ -77,8 +79,6 @@ pub mod prelude {
     #[cfg(feature = "str")]
     pub use crate::str::*;
 
-    #[cfg(feature = "ptr")]
-    pub use crate::ptr::*;
     #[cfg(feature = "ptr")]
     pub use ::std::{mem, ptr};
 
@@ -161,6 +161,9 @@ pub mod prelude {
     #[cfg(feature = "flume")]
     pub use ::flume;
 
+    #[cfg(feature = "fs")]
+    pub use crate::fs::*;
+
     #[cfg(feature = "futures")]
     pub use ::futures::{
         self,
@@ -202,6 +205,9 @@ pub mod prelude {
     #[cfg(feature = "parking-lot")]
     pub use ::parking_lot;
 
+    #[cfg(feature = "path-absolutize")]
+    pub use ::path_absolutize;
+
     #[cfg(feature = "pin-project")]
     pub use ::pin_project::{self, pin_project};
 
@@ -232,6 +238,10 @@ pub mod prelude {
 
     #[cfg(feature = "smart-default")]
     pub use ::smart_default::{self, SmartDefault};
+
+    #[cfg(feature = "snowflake")]
+    pub use crate::snowflake::*;
+
     #[cfg(feature = "strum")]
     pub use ::strum::{self, AsRefStr, EnumIter, EnumMessage, IntoEnumIterator, IntoStaticStr};
 
@@ -248,9 +258,6 @@ pub mod prelude {
     pub type JsonMap = ::serde_json::Map<String, Json>;
     #[cfg(feature = "serde-repr")]
     pub use ::serde_repr::{self, Deserialize_repr, Serialize_repr};
-
-    #[cfg(feature = "shellexpand")]
-    pub use ::shellexpand;
 
     #[cfg(feature = "tempfile")]
     pub use ::tempfile::{self, NamedTempFile, TempDir, TempPath};
