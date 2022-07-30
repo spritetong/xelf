@@ -25,8 +25,8 @@ pub mod vec;
 
 pub mod prelude {
     pub use crate::{
-        ok_or, ok_or_break, ok_or_continue, ok_or_return, some_or, some_or_break, some_or_continue,
-        some_or_return, uninit_assume_init, zeroed_init, If,
+        ok, ok_or, ok_or_break, ok_or_continue, ok_or_return, some_or, some_or_break,
+        some_or_continue, some_or_return, uninit_assume_init, zeroed_init, If,
     };
 
     #[cfg(feature = "future")]
