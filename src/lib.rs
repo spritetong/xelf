@@ -206,7 +206,7 @@ pub mod prelude {
     pub use ::parking_lot;
 
     #[cfg(feature = "path-absolutize")]
-    pub use ::path_absolutize;
+    pub use ::path_absolutize::{self, Absolutize as _};
 
     #[cfg(feature = "pin-project")]
     pub use ::pin_project::{self, pin_project};
