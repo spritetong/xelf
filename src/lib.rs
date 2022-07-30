@@ -359,6 +359,22 @@ macro_rules! If {
     };
 }
 
+/// Ignore an Result<T, E> value, do nothing for error.
+#[macro_export]
+macro_rules! ok {
+    ($expr:expr $(,)?) => {
+        match $expr {
+            _ => (),
+        }
+    };
+
+    ($expr:expr, $value:expr $(,)?) => {
+        match $expr {
+            _ => $value,
+        }
+    };
+}
+
 /// Unwrap an Result<T, E> value, execute an expression on error.
 #[macro_export]
 macro_rules! ok_or {
