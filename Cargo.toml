@@ -87,7 +87,7 @@ tokio = { version = "^1", features = ["full"], optional = true }
 tokio-rustls = { version = "^0.23", optional = true }
 tokio-stream = { version = "^0.1", features = [
     "time", "sync", "signal", "net", "fs", "io-util"], optional = true }
-tokio-util = { version = "^0.7", optional = true }
+tokio-util = { version = "^0.7", features = ["full"], optional = true }
 
 hex = { version = "^0.4", optional = true }
 hex-literal = { version = "^0.3", optional = true }

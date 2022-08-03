@@ -169,6 +169,7 @@ pub mod prelude {
         self,
         future::{self, join_all, try_join_all, TryFuture},
         stream::{BoxStream, LocalBoxStream, Stream},
+        Sink,
     };
     #[cfg(feature = "futures-util")]
     pub use ::futures_util::{self, SinkExt, StreamExt};
