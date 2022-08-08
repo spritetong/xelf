@@ -60,7 +60,7 @@ pub mod prelude {
     pub use crate::json::*;
 
     #[cfg(feature = "log")]
-    pub use log::{self, debug, error, info, trace};
+    pub use log::{self, debug, error, info, trace, warn};
 
     #[cfg(feature = "net")]
     pub use ::std::net::{
