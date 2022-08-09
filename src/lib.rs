@@ -172,7 +172,7 @@ pub mod prelude {
         Sink,
     };
     #[cfg(feature = "futures-util")]
-    pub use ::futures_util::{self, SinkExt, StreamExt};
+    pub use ::futures_util::{self, FutureExt, SinkExt, StreamExt};
 
     #[cfg(feature = "hex")]
     pub use ::hex::{self, FromHex, ToHex};
