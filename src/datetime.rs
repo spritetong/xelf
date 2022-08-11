@@ -110,10 +110,32 @@ pub mod serde_x_utc {
     {
         deserializer.deserialize_any(DeUtcVisitor)
     }
+
+    pub mod f64 {
+        use super::*;
+
+        /// Function to serializing a **`DateTimeUtc`**
+        pub fn serialize<S>(utc: &DateTimeUtc, serializer: S) -> Result<S::Ok, S::Error>
+        where
+            S: Serializer,
+        {
+            serializer.serialize_f64(utc.timestamp_micros() as f64 / 1000000.)
+        }
+
+        /// Function to deserializing a **`DateTimeUtc`**
+        pub fn deserialize<'de, D>(deserializer: D) -> Result<DateTimeUtc, D::Error>
+        where
+            D: de::Deserializer<'de>,
+        {
+            deserializer.deserialize_f64(DeUtcVisitor)
+        }
+    }
 }
 
 #[cfg(feature = "chrono-serde")]
 pub use serde_x_utc::{deserialize as de_x_utc, serialize as ser_x_utc};
+#[cfg(feature = "chrono-serde")]
+pub use serde_x_utc::{f64::deserialize as de_x_utc_f64, f64::serialize as ser_x_utc_f64};
 
 ////////////////////////////////////////////////////////////////////////////////
 
