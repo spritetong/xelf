@@ -174,6 +174,13 @@ pub mod prelude {
     #[cfg(feature = "futures-util")]
     pub use ::futures_util::{self, FutureExt, SinkExt, StreamExt};
 
+    #[cfg(feature = "hashlink")]
+    pub use ::hashlink;
+    #[cfg(all(feature = "hashlink", not(feature = "ritelinked")))]
+    pub use ::hashlink::{linked_hash_map, linked_hash_set, LinkedHashMap, LinkedHashSet};
+    #[cfg(feature = "ritelinked")]
+    pub use ::ritelinked::{self, linked_hash_map, linked_hash_set, LinkedHashMap, LinkedHashSet};
+
     #[cfg(feature = "hex")]
     pub use ::hex::{self, FromHex, ToHex};
     #[cfg(feature = "hex-literal")]
@@ -214,9 +221,6 @@ pub mod prelude {
 
     #[cfg(feature = "regex")]
     pub use ::regex::{self, Regex};
-
-    #[cfg(feature = "ritelinked")]
-    pub use ::ritelinked::{self, linked_hash_map, linked_hash_set, LinkedHashMap, LinkedHashSet};
 
     #[cfg(feature = "rust-decimal")]
     pub use ::rust_decimal::{self, Decimal};

@@ -86,6 +86,11 @@ impl_contains!(@set K, [], impl<K, Q> for BTreeSet<K> where);
 impl_contains!(@map K, [], impl<K, Q, V, S> for HashMap<K, V, S> where S: BuildHasher);
 impl_contains!(@set K, [], impl<K, Q, S> for HashSet<K, S> where S: BuildHasher);
 
+#[cfg(feature = "hashlink")]
+impl_contains!(@map K, [], impl<K, Q, V, S> for hashlink::LinkedHashMap<K, V, S> where S: BuildHasher);
+#[cfg(feature = "hashlink")]
+impl_contains!(@set K, [], impl<K, Q, S> for hashlink::LinkedHashSet<K, S> where S: BuildHasher);
+
 #[cfg(feature = "ritelinked")]
 impl_contains!(@map K, [], impl<K, Q, V, S> for ritelinked::LinkedHashMap<K, V, S> where S: BuildHasher);
 #[cfg(feature = "ritelinked")]

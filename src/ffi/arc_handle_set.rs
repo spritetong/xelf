@@ -1,5 +1,5 @@
+use crate::prelude::{linked_hash_map::RawEntryMut, LinkedHashMap};
 use crossbeam::sync::ShardedLock;
-use ritelinked::{linked_hash_map::RawEntryMut, LinkedHashMap};
 use std::{any::TypeId, mem::forget, sync::Arc};
 
 pub type ArcHandle = usize;

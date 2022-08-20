@@ -712,7 +712,7 @@ pub struct SqlParamIterator {
     params: Arc<ParamMap>,
     #[borrows(params)]
     #[covariant]
-    it: ritelinked::linked_hash_map::Iter<'this, ByteString, ParamIndices>,
+    it: linked_hash_map::Iter<'this, ByteString, ParamIndices>,
 }
 
 impl Iterator for SqlParamIterator {
