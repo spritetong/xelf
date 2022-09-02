@@ -94,7 +94,7 @@ impl<I: Index, T: Num, V: JsonIndexed<I>> JsonGetOr<'_, I, T, i64> for V {
         T::from_i64(
             self.get_member(index)
                 .and_then(|x| x.as_i64())
-                .unwrap_or(default.as_i64()),
+                .unwrap_or_else(|| default.as_i64()),
         )
     }
 
@@ -114,7 +114,7 @@ impl<'a, I: Index, T: Float, V: JsonIndexed<I>> JsonGetOr<'a, I, T, f64> for V {
         T::from_f64(
             self.get_member(index)
                 .and_then(|x| x.as_f64())
-                .unwrap_or(default.as_f64()),
+                .unwrap_or_else(|| default.as_f64()),
         )
     }
 
@@ -238,8 +238,8 @@ impl JsonObjectRsx for Map<String, Json> {
     fn take_with_prefix(&mut self, prefix: &str) -> Self {
         let mut map = Map::new();
         for (k, v) in self {
-            if k.starts_with(prefix) {
-                map.insert((&k[prefix.len()..]).to_owned(), Json::from(v.take()));
+            if let Some(stripped) = k.strip_prefix(prefix) {
+                map.insert(stripped.to_owned(), v.take());
             }
         }
         map

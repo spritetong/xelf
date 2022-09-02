@@ -11,6 +11,7 @@ impl<T: Sized + Copy + Default> VecRsx for Vec<T> {
     #[inline]
     fn with_length(len: usize) -> Self {
         let mut v = Self::with_capacity(len);
+        #[allow(clippy::uninit_vec)]
         unsafe {
             v.set_len(len);
         }
@@ -22,6 +23,7 @@ impl<T: Sized + Copy + Default> VecRsx for Vec<T> {
         if new_len > self.len() {
             self.reserve(new_len - self.len());
         }
+        #[allow(clippy::uninit_vec)]
         unsafe {
             self.set_len(new_len);
         }

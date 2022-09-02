@@ -185,7 +185,7 @@ impl<'de, T: FromStr> de::Visitor<'de> for DeStringsVisitor<T> {
 }
 
 /// Function to serializing a **`Vec<String>`** a simple string, the separator is ','
-pub fn ser_x_strings<S>(this: &Vec<String>, serializer: S) -> Result<S::Ok, S::Error>
+pub fn ser_x_strings<S>(this: &[String], serializer: S) -> Result<S::Ok, S::Error>
 where
     S: ser::Serializer,
 {
@@ -204,7 +204,7 @@ where
 /// Function to serializing an object <T> to a simple string, the separator is ','
 /// 
 /// Usually type T is number.
-pub fn ser_x_vec<T: ToString, S>(this: &Vec<T>, serializer: S) -> Result<S::Ok, S::Error>
+pub fn ser_x_vec<T: ToString, S>(this: &[T], serializer: S) -> Result<S::Ok, S::Error>
 where
     S: ser::Serializer,
 {

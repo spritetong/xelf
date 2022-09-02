@@ -12,7 +12,7 @@ pub fn utc_default() -> DateTimeUtc {
 }
 
 pub fn utc_from_str(s: &str) -> chrono::ParseResult<DateTimeUtc> {
-    DateTime::parse_from_rfc3339(s).map(|x| DateTime::<Utc>::from(x))
+    DateTime::parse_from_rfc3339(s).map(DateTime::<Utc>::from)
 }
 
 pub fn utc_into_str(utc: DateTimeUtc) -> String {
