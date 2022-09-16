@@ -23,7 +23,7 @@ pub trait StrRsx {
 
     /// Format a string by the template.
     #[cfg(feature = "regex")]
-    fn render<'a, F>(&'a self, f: F) -> std::borrow::Cow<'a, str>
+    fn render<F>(&self, f: F) -> std::borrow::Cow<'_, str>
     where
         F: Fn(&str, &mut String);
 }
@@ -67,7 +67,7 @@ impl<T: AsRef<str>> StrRsx for T {
 
     #[cfg(feature = "ffi")]
     fn strlcpy(&self, dst: &mut [c_char]) {
-        if dst.len() > 0 {
+        if !dst.is_empty() {
             let mut len = 0;
             for (a, b) in dst.iter_mut().zip(self.as_ref().bytes()) {
                 *a = b as c_char;
@@ -110,7 +110,7 @@ impl<T: AsRef<str>> StrRsx for T {
     /// ```
     ///
     #[cfg(feature = "regex")]
-    fn render<'a, F>(&'a self, f: F) -> std::borrow::Cow<'a, str>
+    fn render<F>(&self, f: F) -> std::borrow::Cow<'_, str>
     where
         F: Fn(&str, &mut String),
     {

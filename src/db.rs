@@ -138,7 +138,7 @@ pub enum DbLockMode {
     AccessExclusive,
 }
 
-#[derive(Copy, Clone, PartialEq)]
+#[derive(Copy, Clone, PartialEq, Eq)]
 pub enum DbFunc {
     Least,
     Greatest,
@@ -276,8 +276,8 @@ pub fn _db_cust_with_values(backend: DbBackend, s: &str) -> String {
     let mut s = s.as_bytes();
     let mut no = 1;
     let mut buf = Vec::<u8>::with_capacity(s.len() + 32);
-    while let Some(i) = s.iter().position(|&x| x == '?' as u8) {
-        if s.get(i + 1) == Some(&('?' as u8)) {
+    while let Some(i) = s.iter().position(|&x| x == b'?') {
+        if s.get(i + 1) == Some(&b'?') {
             buf.put_slice(&s[..i + 1]);
             s = &s[i + 2..];
         } else {
@@ -288,7 +288,7 @@ pub fn _db_cust_with_values(backend: DbBackend, s: &str) -> String {
                     write!(&mut buf, "${}", no).unwrap();
                 }
                 DbBackend::Sqlite | DbBackend::MySql => {
-                    buf.put_u8('?' as u8);
+                    buf.put_u8(b'?');
                 }
             }
             no += 1;
@@ -417,9 +417,9 @@ impl RawSqlBuilder {
     }
 }
 
-impl Into<Statement> for RawSqlBuilder {
-    fn into(self) -> Statement {
-        self.into_statement()
+impl From<RawSqlBuilder> for Statement {
+    fn from(builder: RawSqlBuilder) -> Statement {
+        builder.into_statement()
     }
 }
 
@@ -695,15 +695,15 @@ impl From<Statement> for SqlHelper {
     }
 }
 
-impl Into<Statement> for SqlHelper {
-    fn into(self) -> Statement {
-        self.into_statement()
+impl From<SqlHelper> for Statement {
+    fn from(helper: SqlHelper) -> Statement {
+        helper.into_statement()
     }
 }
 
 impl From<RawSqlBuilder> for SqlHelper {
     fn from(builder: RawSqlBuilder) -> Self {
-        Into::<Statement>::into(builder).into()
+        Statement::from(builder).into()
     }
 }
 
@@ -732,13 +732,15 @@ impl Iterator for SqlParamIterator {
 ////////////////////////////////////////////////////////////////////////////////
 
 pub struct SqlCache {
-    map: ShardedLock<LinkedHashMap<String, Arc<SqlHelper>>>,
+    map: PlRwLock<LinkedHashMap<String, Arc<SqlHelper>>>,
 }
+
+impl_default_by_new!(SqlCache);
 
 impl SqlCache {
     pub fn new() -> Self {
         Self {
-            map: ShardedLock::new(LinkedHashMap::new()),
+            map: PlRwLock::new(LinkedHashMap::new()),
         }
     }
 
@@ -751,7 +753,7 @@ impl SqlCache {
 
         // Get from the cache at first.
         let sql = {
-            let guard = self.map.read().unwrap();
+            let guard = self.map.read();
             match guard.get(&name) {
                 Some(v) => v.clone(),
                 _ => {
@@ -760,7 +762,6 @@ impl SqlCache {
                     let sql = Arc::new(maker(db_backend));
                     self.map
                         .write()
-                        .unwrap()
                         .raw_entry_mut()
                         .from_key(&name)
                         .or_insert(name, sql)
@@ -777,11 +778,11 @@ impl SqlCache {
         N: AsRef<str>,
     {
         let name = format!("{:?}://{}", db_backend, name.as_ref());
-        self.map.write().unwrap().remove(&name)
+        self.map.write().remove(&name)
     }
 
     pub fn clear(&self) {
-        self.map.write().unwrap().clear();
+        self.map.write().clear();
     }
 }
 
@@ -840,13 +841,13 @@ impl OrderByHelper {
                     wrapper_func: IdenStr(
                         wrapper_funcs
                             .and_then(|x| x.get(&cap[1]).map(|x| x.as_ref().to_owned()))
-                            .unwrap_or_else(|| String::new())
+                            .unwrap_or_default()
                             .into(),
                     ),
                     aggregate_func: IdenStr(
                         aggregate_funcs
                             .and_then(|x| x.get(&cap[1]).map(|x| x.as_ref().to_owned()))
-                            .unwrap_or_else(|| String::new())
+                            .unwrap_or_default()
                             .into(),
                     ),
                 });

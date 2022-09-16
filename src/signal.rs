@@ -15,7 +15,7 @@ use ::tokio_stream::StreamMap;
 ///     println!("Ok!");
 /// }
 /// ```
-pub fn merge_ctrl_c<'a>(stream: BoxStream<'a, ()>) -> BoxStream<'a, ()> {
+pub fn merge_ctrl_c(stream: BoxStream<()>) -> BoxStream<()> {
     use tokio_stream::wrappers::*;
 
     let mut map = StreamMap::new();

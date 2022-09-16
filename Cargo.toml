@@ -1,6 +1,6 @@
 [package]
 name = "rsx"
-version = "0.3.1"
+version = "0.3.2"
 edition = "2021"
 
 [lib]
@@ -36,7 +36,7 @@ future = []
 hashmap = ["ahash", "hashlink", "maplit"]
 io = []
 json = ["base64", "serde", "serde-json", "num", "collections", "with-hex"]
-net = ["ipnetwork", "socket2", "url"]
+net = ["ipnetwork", "socket2", "url", "winapi"]
 num = []
 ptr = ["memoffset", "once-cell"]
 snowflake = ["smart-default"]
@@ -128,3 +128,6 @@ sea-orm = { version = "0.9", features = [
 sqlx = { version = "0.6", features = [
     "runtime-tokio-rustls", "postgres", "sqlite", "migrate", "any"
     ], optional = true }
+
+[target.'cfg(windows)'.dependencies]
+winapi = { version = "0.3", features = ["mswsock"], optional = true }

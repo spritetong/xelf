@@ -10,6 +10,8 @@ pub mod ffi;
 pub mod fs;
 #[cfg(feature = "json")]
 pub mod json;
+#[cfg(feature = "net")]
+pub mod net;
 #[cfg(feature = "num")]
 pub mod num;
 #[cfg(feature = "serde")]
@@ -25,12 +27,12 @@ pub mod vec;
 
 pub mod prelude {
     pub use crate::{
-        ok, ok_or, ok_or_break, ok_or_continue, ok_or_return, some_or, some_or_break,
-        some_or_continue, some_or_return, uninit_assume_init, zeroed_init, If,
+        impl_default_by_new, ok, ok_or, ok_or_break, ok_or_continue, ok_or_return, some_or,
+        some_or_break, some_or_continue, some_or_return, uninit_assume_init, zeroed_init, If,
     };
 
     #[cfg(feature = "future")]
-    pub use ::std::{future::Future, pin::Pin};
+    pub use ::std::{future::Future, marker::PhantomPinned, pin::Pin};
 
     #[cfg(feature = "chrono")]
     pub use ::std::time::{self, Duration, Instant, SystemTime, UNIX_EPOCH};
@@ -74,6 +76,8 @@ pub mod prelude {
     pub use crate::serde::*;
 
     #[cfg(feature = "socket2")]
+    pub use crate::net::SocketRsx;
+    #[cfg(feature = "socket2")]
     pub use ::socket2;
 
     #[cfg(feature = "str")]
@@ -93,6 +97,7 @@ pub mod prelude {
         env,
         fmt::{self, Display, Write as FmtWrite},
         iter,
+        marker::PhantomData,
         ops::{self, *},
         rc::Rc,
         slice,
@@ -167,12 +172,12 @@ pub mod prelude {
     #[cfg(feature = "futures")]
     pub use ::futures::{
         self,
-        future::{self, join_all, try_join_all, TryFuture},
+        future::{self, join_all, poll_fn, poll_immediate, try_join_all, TryFuture},
         stream::{BoxStream, LocalBoxStream, Stream},
         Sink,
     };
     #[cfg(feature = "futures-util")]
-    pub use ::futures_util::{self, FutureExt, SinkExt, StreamExt};
+    pub use ::futures_util::{self, FutureExt, SinkExt, StreamExt, TryStreamExt};
 
     #[cfg(feature = "hashlink")]
     pub use ::hashlink;
@@ -211,7 +216,7 @@ pub mod prelude {
     pub use ::ouroboros::{self, self_referencing};
 
     #[cfg(feature = "parking-lot")]
-    pub use ::parking_lot;
+    pub use ::parking_lot::{self, Mutex as PlMutex, RwLock as PlRwLock};
 
     #[cfg(feature = "path-absolutize")]
     pub use ::path_absolutize::{self, Absolutize as _};
@@ -288,6 +293,18 @@ pub mod prelude {
 
     #[cfg(feature = "zerocopy")]
     pub use ::zerocopy::{self, AsBytes, FromBytes};
+}
+
+/// Implement Default for type T has T::new() -> T
+#[macro_export]
+macro_rules! impl_default_by_new {
+    ($type:ident) => {
+        impl Default for $type {
+            fn default() -> Self {
+                $type::new()
+            }
+        }
+    };
 }
 
 /// Create an object and fill its memory with zero.

@@ -9,13 +9,15 @@ pub struct ParkerCache {
     q: SegQueue<usize>,
 }
 
+crate::impl_default_by_new!(ParkerCache);
+
 impl ParkerCache {
     pub fn new() -> Self {
         Self { q: SegQueue::new() }
     }
 
     pub fn get(&self) -> (UnparkerGuard, ParkerGuard) {
-        let p = self.pop().unwrap_or_else(|| Parker::new());
+        let p = self.pop().unwrap_or_else(Parker::new);
         let u = p.unparker().clone();
         (
             UnparkerGuard(ManuallyDrop::new(u)),
@@ -28,7 +30,7 @@ impl ParkerCache {
 
     pub fn clear(&self) {
         // Clear the packer queue.
-        while let Some(_) = self.pop() {}
+        while self.pop().is_some() {}
     }
 
     #[cfg(feature = "async")]
@@ -36,7 +38,7 @@ impl ParkerCache {
     where
         F: Future<Output = ()> + 'a,
     {
-        tokio_scope::Scope::new(&self, handle).block_on(future);
+        tokio_scope::Scope::new(self, handle).block_on(future);
     }
 
     #[inline]

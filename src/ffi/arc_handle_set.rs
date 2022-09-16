@@ -1,12 +1,12 @@
 use crate::prelude::{linked_hash_map::RawEntryMut, LinkedHashMap};
-use crossbeam::sync::ShardedLock;
+use parking_lot::RwLock;
 use std::{any::TypeId, mem::forget, sync::Arc};
 
 pub type ArcHandle = usize;
 type FnDrop = fn(h: ArcHandle);
 
 pub struct ArcHandleSet {
-    map: ShardedLock<LinkedHashMap<ArcHandle, (FnDrop, TypeId)>>,
+    map: RwLock<LinkedHashMap<ArcHandle, (FnDrop, TypeId)>>,
 }
 
 macro_rules! arc_from_handle {
@@ -15,10 +15,12 @@ macro_rules! arc_from_handle {
     };
 }
 
+crate::impl_default_by_new!(ArcHandleSet);
+
 impl ArcHandleSet {
     pub fn new() -> Self {
         Self {
-            map: ShardedLock::new(LinkedHashMap::new()),
+            map: RwLock::new(LinkedHashMap::new()),
         }
     }
 
@@ -30,7 +32,7 @@ impl ArcHandleSet {
         let handle = Arc::as_ptr(&arc) as *const () as ArcHandle;
         let t = TypeId::of::<T>();
 
-        let mut guard = self.map.write().unwrap();
+        let mut guard = self.map.write();
         match guard.raw_entry_mut().from_key(&handle) {
             RawEntryMut::Occupied(_) => {
                 #[cfg(debug_assertions)]
@@ -51,7 +53,7 @@ impl ArcHandleSet {
 
     pub fn remove<T: 'static>(&self, handle: ArcHandle) -> Option<Arc<T>> {
         if handle != 0 {
-            let mut guard = self.map.write().unwrap();
+            let mut guard = self.map.write();
             if let Some((_, t)) = guard.remove(&handle) {
                 if t == TypeId::of::<T>() {
                     return Some(arc_from_handle!(handle, T));
@@ -77,7 +79,7 @@ impl ArcHandleSet {
 
     pub fn get<T: 'static>(&self, handle: ArcHandle) -> Option<Arc<T>> {
         if handle != 0 {
-            let guard = self.map.read().unwrap();
+            let guard = self.map.read();
             if let Some((_, t)) = guard.get(&handle) {
                 if *t == TypeId::of::<T>() {
                     let a = arc_from_handle!(handle, T);
@@ -97,7 +99,7 @@ impl ArcHandleSet {
     }
 
     pub fn clear(&self) {
-        self.map.write().unwrap().retain(|&h, (drop, _)| {
+        self.map.write().retain(|&h, (drop, _)| {
             drop(h);
             false
         });
@@ -105,7 +107,7 @@ impl ArcHandleSet {
 
     pub fn clear_of<T: 'static>(&self) {
         let t = TypeId::of::<T>();
-        self.map.write().unwrap().retain(move |&h, (drop, x)| {
+        self.map.write().retain(move |&h, (drop, x)| {
             if *x == t {
                 drop(h);
                 false
@@ -140,11 +142,11 @@ mod tests {
         assert_eq!(set.get(h2), Some(a2.clone()));
 
         //assert!(set.remove::<i32>(h).is_some());
-        assert_eq!(set.map.read().unwrap().len(), 2);
+        assert_eq!(set.map.read().len(), 2);
         set.clear_of::<i32>();
-        assert_eq!(set.map.read().unwrap().len(), 1);
+        assert_eq!(set.map.read().len(), 1);
 
         set.clear();
-        assert_eq!(set.map.read().unwrap().len(), 0);
+        assert_eq!(set.map.read().len(), 0);
     }
 }
