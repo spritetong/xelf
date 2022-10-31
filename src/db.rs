@@ -645,7 +645,8 @@ impl From<Statement> for SqlHelper {
         let mut start = 0;
         static RE: Lazy<Regex> =
             Lazy::new(|| Regex::new(r#"(?:\{\{|\}\}|\{:[[:word:]]+\})"#).unwrap());
-        while let Some(m) = RE.find_at(sql.as_str(), start) {
+        let re = &*RE;
+        while let Some(m) = re.find_at(sql.as_str(), start) {
             if sql_bytes.is_empty() {
                 sql_bytes = Bytes::copy_from_slice(sql.as_bytes());
             }
