@@ -144,6 +144,9 @@ pub mod prelude {
     #[cfg(feature = "bytestring")]
     pub use ::bytestring::{self, ByteString};
 
+    #[cfg(feature = "cfg-if")]
+    pub use ::cfg_if::{self, cfg_if};
+
     #[cfg(feature = "chrono")]
     pub use ::chrono::{self, prelude::*};
 
@@ -151,7 +154,7 @@ pub mod prelude {
     pub use crossbeam::{
         self,
         atomic::AtomicCell,
-        sync::{Parker, ShardedLock},
+        sync::{Parker, Unparker, ShardedLock},
     };
 
     #[cfg(feature = "derive-more")]
