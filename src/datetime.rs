@@ -8,7 +8,7 @@ pub type DateTimeUtc = DateTime<Utc>;
 /// Get the default value for DateTime<Utc>, the Unix Epoch at 1970-01-01T00:00:00Z.
 #[inline]
 pub fn utc_default() -> DateTimeUtc {
-    Utc.timestamp(0, 0)
+    Utc.timestamp_opt(0, 0).unwrap()
 }
 
 pub fn utc_from_str(s: &str) -> chrono::ParseResult<DateTimeUtc> {

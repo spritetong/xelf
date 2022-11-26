@@ -4,7 +4,7 @@ pub use sea_orm::{
     entity::prelude::*,
     sea_query::{
         BinOper, ConditionExpression, DynIden, Expr, Func, Function, IntoIden, JoinOn, LikeExpr,
-        LogicalChainOper, Query, QueryBuilder, SimpleExpr, SqlWriter, UnOper,
+        LogicalChainOper, Query, QueryBuilder, SimpleExpr, SqlWriter, SqlWriterValues, UnOper,
     },
     ActiveValue, Condition, ConnectOptions, ConnectionTrait, Database, DatabaseBackend,
     DatabaseTransaction, DbBackend, DbErr, ExecResult, FromQueryResult, IntoActiveModel, JoinType,
@@ -142,7 +142,6 @@ pub enum DbLockMode {
 pub enum DbFunc {
     Least,
     Greatest,
-    /// Func::current_timestamp()
     Now,
     /// Func::upper()
     Upper,
@@ -191,7 +190,7 @@ pub trait DbBackendTrait {
     }
 
     fn now(&self) -> SimpleExpr {
-        Func::current_timestamp()
+        Func::cust(IdenStr(_db_builtin_func(self.backend(), DbFunc::Now))).into()
     }
 
     fn least<T>(&self, arg: T) -> SimpleExpr
@@ -324,33 +323,29 @@ impl DbBackendTrait for DatabaseTransaction {
 pub struct RawSqlBuilder {
     db_backend: DbBackend,
     builder: Box<dyn QueryBuilder + Send>,
-    writer: SqlWriter,
-    values: Vec<Value>,
+    writer: SqlWriterValues,
 }
 
 impl RawSqlBuilder {
     pub fn new(db_backend: DbBackend) -> Self {
+        let writer = match db_backend {
+            DbBackend::MySql | DbBackend::Sqlite => SqlWriterValues::new("?", false),
+            DbBackend::Postgres => SqlWriterValues::new("$", true),
+        };
         Self {
             db_backend,
             // The conversion is safe.
             builder: unsafe { mem::transmute(db_backend.get_query_builder()) },
-            writer: SqlWriter::new(),
-            values: Vec::new(),
+            writer,
         }
     }
 
     pub fn into_statement(self) -> Statement {
-        let Self {
-            db_backend,
-            writer,
-            values,
-            ..
-        } = self;
-
+        let (sql, values) = self.writer.into_parts();
         Statement {
-            sql: writer.result(),
-            values: Some(Values(values)),
-            db_backend,
+            sql,
+            values: Some(values),
+            db_backend: self.db_backend,
         }
     }
 
@@ -392,9 +387,7 @@ impl RawSqlBuilder {
     }
 
     pub fn write_expr(&mut self, expr: &SimpleExpr) {
-        let mut collector = |x| self.values.push(x);
-        self.builder
-            .prepare_simple_expr(expr, &mut self.writer, &mut collector);
+        self.builder.prepare_simple_expr(expr, &mut self.writer);
     }
 
     pub fn write(&mut self, s: &str) {
@@ -428,7 +421,6 @@ impl fmt::Debug for RawSqlBuilder {
         f.debug_struct("RawSqlBuilder")
             .field("db_backend", &self.db_backend)
             .field("SQL", &self.writer)
-            .field("values", &self.values)
             .finish()
     }
 }
