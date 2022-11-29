@@ -57,7 +57,7 @@ actix-web = { version = "4.2", features = ["rustls"], optional = true }
 actix-web-actors = { version = "4.1", optional = true }
 actix-web-httpauth = { version = "0.8", optional = true }
 
-ahash = { version = "0.8", optional = true }
+ahash = { version = "=0.7", optional = true }
 maplit = { version = "1", optional = true }
 ritelinked = { version = "0.3", optional = true }
 hashlink = { version = "0.8", optional = true }
@@ -75,7 +75,7 @@ strum = { version = "0.24", features = ["derive"], optional = true }
 
 cfg-if = { version = "1", optional = true }
 dotenv = { version = "0.15", optional = true }
-env-logger = { version = "0.9", package = "env_logger", optional = true }
+env-logger = { version = "=0.9", package = "env_logger", optional = true }
 log = { version = "0.4", optional = true }
 path-absolutize = { version = "3", optional = true }
 
