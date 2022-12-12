@@ -1,6 +1,6 @@
 [package]
 name = "rsx"
-version = "0.3.4"
+version = "0.3.5"
 edition = "2021"
 
 [lib]
@@ -75,7 +75,7 @@ strum = { version = "0.24", features = ["derive"], optional = true }
 
 cfg-if = { version = "1", optional = true }
 dotenv = { version = "0.15", optional = true }
-env-logger = { version = "=0.9", package = "env_logger", optional = true }
+env-logger = { version = "0.10", package = "env_logger", optional = true }
 log = { version = "0.4", optional = true }
 path-absolutize = { version = "3", optional = true }
 
@@ -107,7 +107,7 @@ ouroboros = { version = "0.15", optional = true }
 
 regex = { version = "1", optional = true }
 
-base64 = { version = "0.13", optional = true }
+base64 = { version = "0.20", optional = true }
 serde = { version = "1", features = ["derive"], optional = true }
 serde-json = { version = "1", package = "serde_json", optional = true }
 serde-repr = { version = "0.1", package = "serde_repr", optional = true }
