@@ -99,7 +99,7 @@ socket2 = { version = "0.4", optional = true }
 url = { version = "2", optional = true }
 
 num-cpus = { version = "1", package = "num_cpus", optional = true }
-memoffset = { version = "0.7", optional = true }
+memoffset = { version = "=0.7", optional = true }
 zerocopy = { version = "0.6", optional = true }
 
 once-cell = { version = "1", package = "once_cell", optional = true }
@@ -107,7 +107,7 @@ ouroboros = { version = "0.15", optional = true }
 
 regex = { version = "1", optional = true }
 
-base64 = { version = "0.20", optional = true }
+base64 = { version = "0.21", optional = true }
 serde = { version = "1", features = ["derive"], optional = true }
 serde-json = { version = "1", package = "serde_json", optional = true }
 serde-repr = { version = "0.1", package = "serde_repr", optional = true }

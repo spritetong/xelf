@@ -137,7 +137,7 @@ pub mod prelude {
     pub use ::async_trait::{self, async_trait};
 
     #[cfg(feature = "base64")]
-    pub use ::base64;
+    pub use ::base64::{self, engine::general_purpose::STANDARD as base64_standard, Engine as _};
 
     #[cfg(feature = "bytes")]
     pub use ::bytes::{self, Buf, BufMut, Bytes, BytesMut};
@@ -154,7 +154,7 @@ pub mod prelude {
     pub use crossbeam::{
         self,
         atomic::AtomicCell,
-        sync::{Parker, Unparker, ShardedLock},
+        sync::{Parker, ShardedLock, Unparker},
     };
 
     #[cfg(feature = "derive-more")]

@@ -79,7 +79,7 @@ impl SocketRsx for socket2::Socket {
             use winapi::um::mswsock::SIO_UDP_CONNRESET;
             use winapi::um::winsock2::{WSAIoctl, SOCKET};
 
-            let mut value: BOOL = if value { 1 } else { 0 };
+            let mut value = BOOL::from(value);
             let mut bytes_returned: DWORD = 0;
             // SAFETY: call Windows socket API.
             match unsafe {

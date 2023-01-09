@@ -1,5 +1,6 @@
 #[cfg(feature = "num")]
 use crate::num::{Float, Num};
+use base64::{engine::general_purpose::STANDARD as base64_standard, Engine as _};
 use serde::{de, ser};
 use std::{fmt, marker::PhantomData, str::FromStr};
 
@@ -192,7 +193,7 @@ impl<'de, T: From<Vec<u8>>> de::Visitor<'de> for DeBytesVisitor<T> {
     where
         E: de::Error,
     {
-        base64::decode(v.as_bytes())
+        base64_standard.decode(v.as_bytes())
             .map(|x| Some(x.into()))
             .map_err(|_| E::invalid_value(de::Unexpected::Str(v), &self))
     }
@@ -204,7 +205,7 @@ where
     T: AsRef<[u8]>,
     S: ser::Serializer,
 {
-    serializer.serialize_str(&base64::encode(this.as_ref()))
+    serializer.serialize_str(&base64_standard.encode(this.as_ref()))
 }
 
 /// Function to deserializing a BASE64 encoded string to a `&[u8]` slice.
@@ -225,7 +226,7 @@ where
     S: ser::Serializer,
 {
     match this {
-        Some(x) => serializer.serialize_str(&base64::encode(x.as_ref())),
+        Some(x) => serializer.serialize_str(&base64_standard.encode(x.as_ref())),
         None => serializer.serialize_none(),
     }
 }
