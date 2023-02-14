@@ -51,10 +51,10 @@ chrono-serde = ["chrono/serde", "json", "serde"]
 [dependencies]
 actix = { version = "0.13", optional = true }
 actix-files = { version = "0.6", optional = true }
-actix-multipart = { version = "0.4", optional = true }
+actix-multipart = { version = "0.5", optional = true }
 actix-service = { version = "2.0", optional = true }
-actix-web = { version = "4.2", features = ["rustls"], optional = true }
-actix-web-actors = { version = "4.1", optional = true }
+actix-web = { version = "4.3", features = ["rustls"], optional = true }
+actix-web-actors = { version = "4.2", optional = true }
 actix-web-httpauth = { version = "0.8", optional = true }
 
 ahash = { version = "=0.7", optional = true }
@@ -123,7 +123,7 @@ flume = { version = "0.10", optional = true }
 parking-lot = { version = "0.12", package = "parking_lot", optional = true }
 
 rust-decimal = { version = "1", package = "rust_decimal", optional = true }
-sea-orm = { version = "0.10", features = [
+sea-orm = { version = "0.11", features = [
     "sqlx-postgres", "sqlx-sqlite", "runtime-tokio-rustls", "runtime-tokio"
     ], optional = true }
 sqlx = { version = "0.6", features = [

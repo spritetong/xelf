@@ -3,8 +3,9 @@ use crate::prelude::*;
 pub use sea_orm::{
     entity::prelude::*,
     sea_query::{
-        BinOper, ConditionExpression, DynIden, Expr, Func, Function, IntoIden, JoinOn, LikeExpr,
-        LogicalChainOper, Query, QueryBuilder, SimpleExpr, SqlWriter, SqlWriterValues, UnOper,
+        BinOper, ConditionExpression, DynIden, Expr, Func, Function, FunctionCall, IntoIden,
+        JoinOn, LikeExpr, LogicalChainOper, Query, QueryBuilder, SimpleExpr, SqlWriter,
+        SqlWriterValues, UnOper,
     },
     ActiveValue, Condition, ConnectOptions, ConnectionTrait, Database, DatabaseBackend,
     DatabaseTransaction, DbBackend, DbErr, ExecResult, FromQueryResult, IntoActiveModel, JoinType,
@@ -189,24 +190,22 @@ pub trait DbBackendTrait {
             .add(C::into(condition))
     }
 
-    fn now(&self) -> SimpleExpr {
-        Func::cust(IdenStr(_db_builtin_func(self.backend(), DbFunc::Now))).into()
+    fn now(&self) -> FunctionCall {
+        Func::cust(IdenStr(_db_builtin_func(self.backend(), DbFunc::Now)))
     }
 
-    fn least<T>(&self, arg: T) -> SimpleExpr
+    fn least<T>(&self, arg: T) -> FunctionCall
     where
         T: Into<SimpleExpr>,
     {
-        Func::cust(IdenStr(_db_builtin_func(self.backend(), DbFunc::Least)))
-            .args(vec![T::into(arg)])
+        Func::cust(IdenStr(_db_builtin_func(self.backend(), DbFunc::Least))).arg(arg)
     }
 
-    fn greatest<T>(&self, arg: T) -> SimpleExpr
+    fn greatest<T>(&self, arg: T) -> FunctionCall
     where
         T: Into<SimpleExpr>,
     {
-        Func::cust(IdenStr(_db_builtin_func(self.backend(), DbFunc::Greatest)))
-            .args(vec![T::into(arg)])
+        Func::cust(IdenStr(_db_builtin_func(self.backend(), DbFunc::Greatest))).arg(arg)
     }
 }
 
@@ -334,7 +333,7 @@ impl RawSqlBuilder {
         };
         Self {
             db_backend,
-            // The conversion is safe.
+            // This conversion is safe.
             builder: unsafe { mem::transmute(db_backend.get_query_builder()) },
             writer,
         }
@@ -849,81 +848,6 @@ impl OrderByHelper {
         self
     }
 
-    pub fn write_filters<E>(&self, after: Option<&Json>, writer: &mut dyn FnMut(SimpleExpr))
-    where
-        E: EntityTrait,
-        E::Model: DeserializeOwned,
-    {
-        // filters
-        if let Some(after @ &Json::Object(_)) = after {
-            if let Ok(model) = serde_json::from_value::<E::Model>(after.clone()) {
-                // Filter: "<id_field>" <> after.<id_field>
-                let id_col_name = self.id_field.split('.').last().unwrap();
-                if let Ok(id_col) = E::Column::from_str(id_col_name) {
-                    let after_id = model.get(id_col);
-                    if !sea_orm::sea_query::sea_value_to_json_value(&after_id).is_null() {
-                        writer(Expr::tbl(self.entity.clone(), id_col).ne(after_id));
-                    }
-                } else {
-                    for key in <E as EntityTrait>::PrimaryKey::iter() {
-                        let col = key.into_column();
-                        let value = model.get(col);
-                        if !sea_orm::sea_query::sea_value_to_json_value(&value).is_null() {
-                            writer(Expr::tbl(self.entity.clone(), col).ne(value));
-                        }
-                    }
-                }
-
-                for pat in self.order_by.iter() {
-                    if let Ok(col) = E::Column::from_str(&pat.field) {
-                        match after.get(&pat.field) {
-                            None | Some(Json::Null) => (),
-                            _ => {
-                                let mut field = Expr::tbl(self.entity.clone(), col);
-                                let mut value = Expr::val(model.get(col));
-                                if !pat.wrapper_func.is_empty() {
-                                    field = Expr::expr(
-                                        Func::cust(pat.wrapper_func.clone()).args([field]),
-                                    );
-                                    value = Expr::expr(
-                                        Func::cust(pat.wrapper_func.clone()).args([value]),
-                                    )
-                                }
-                                if pat.asc {
-                                    writer(field.greater_or_equal(value));
-                                } else {
-                                    writer(field.less_or_equal(value));
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    pub fn write_order_by<E>(&self, writer: &mut dyn FnMut(SimpleExpr, Order))
-    where
-        E: EntityTrait,
-    {
-        for pat in self.order_by.iter() {
-            if let Ok(col) = E::Column::from_str(&pat.field) {
-                let mut field = Expr::tbl(self.entity.clone(), col).into_simple_expr();
-                if !pat.wrapper_func.is_empty() {
-                    field = Func::cust(pat.wrapper_func.clone()).args([field]);
-                }
-                if !pat.aggregate_func.is_empty() {
-                    field = Func::cust(pat.aggregate_func.clone()).args([field]);
-                }
-                if pat.asc {
-                    writer(field, Order::Asc);
-                } else {
-                    writer(field, Order::Desc);
-                }
-            }
-        }
-    }
-
     pub fn select_filters<E>(&self, select: Select<E>, after: Option<&Json>) -> Select<E>
     where
         E: EntityTrait,
@@ -977,6 +901,79 @@ impl OrderByHelper {
             sep = ", "
         };
         self.write_order_by::<E>(&mut writer);
+    }
+
+    fn write_filters<E>(&self, after: Option<&Json>, writer: &mut dyn FnMut(SimpleExpr))
+    where
+        E: EntityTrait,
+        E::Model: DeserializeOwned,
+    {
+        // filters
+        if let Some(after @ &Json::Object(_)) = after {
+            if let Ok(model) = serde_json::from_value::<E::Model>(after.clone()) {
+                // Filter: "<id_field>" <> after.<id_field>
+                let id_col_name = self.id_field.split('.').last().unwrap();
+                if let Ok(id_col) = E::Column::from_str(id_col_name) {
+                    let after_id = model.get(id_col);
+                    if !sea_orm::sea_query::sea_value_to_json_value(&after_id).is_null() {
+                        writer(Expr::col((self.entity.clone(), id_col)).ne(after_id));
+                    }
+                } else {
+                    for key in <E as EntityTrait>::PrimaryKey::iter() {
+                        let col = key.into_column();
+                        let value = model.get(col);
+                        if !sea_orm::sea_query::sea_value_to_json_value(&value).is_null() {
+                            writer(Expr::col((self.entity.clone(), col)).ne(value));
+                        }
+                    }
+                }
+
+                for pat in self.order_by.iter() {
+                    if let Ok(col) = E::Column::from_str(&pat.field) {
+                        match after.get(&pat.field) {
+                            None | Some(Json::Null) => (),
+                            _ => {
+                                let mut field = Expr::col((self.entity.clone(), col));
+                                let mut value = Expr::val(model.get(col));
+                                if !pat.wrapper_func.is_empty() {
+                                    field =
+                                        Expr::expr(Func::cust(pat.wrapper_func.clone()).arg(field));
+                                    value =
+                                        Expr::expr(Func::cust(pat.wrapper_func.clone()).arg(value))
+                                }
+                                if pat.asc {
+                                    writer(field.gte(value));
+                                } else {
+                                    writer(field.lte(value));
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    fn write_order_by<E>(&self, writer: &mut dyn FnMut(SimpleExpr, Order))
+    where
+        E: EntityTrait,
+    {
+        for pat in self.order_by.iter() {
+            if let Ok(col) = E::Column::from_str(&pat.field) {
+                let mut field = Expr::col((self.entity.clone(), col)).into();
+                if !pat.wrapper_func.is_empty() {
+                    field = Func::cust(pat.wrapper_func.clone()).arg(field).into();
+                }
+                if !pat.aggregate_func.is_empty() {
+                    field = Func::cust(pat.aggregate_func.clone()).arg(field).into();
+                }
+                if pat.asc {
+                    writer(field, Order::Asc);
+                } else {
+                    writer(field, Order::Desc);
+                }
+            }
+        }
     }
 }
 
@@ -1063,14 +1060,14 @@ mod tests {
     fn test_sql_helper() {
         assert_eq!(
             Query::select()
-                .expr(DbBackend::Postgres.cust_with_values("? '??' ?", vec!["a", "b"]))
+                .expr(DbBackend::Postgres.cust_with_values("? '??' ?", ["a", "b"]))
                 .to_owned()
                 .to_string(sea_orm::sea_query::PostgresQueryBuilder),
             "SELECT 'a' '?' 'b'"
         );
         assert_eq!(
             Query::select()
-                .expr(DbBackend::Sqlite.cust_with_values("? '??' ?", vec!["a", "b"]))
+                .expr(DbBackend::Sqlite.cust_with_values("? '??' ?", ["a", "b"]))
                 .to_owned()
                 .to_string(sea_orm::sea_query::SqliteQueryBuilder),
             "SELECT 'a' '?' 'b'"
