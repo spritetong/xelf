@@ -51,13 +51,13 @@ chrono-serde = ["chrono/serde", "json", "serde"]
 [dependencies]
 actix = { version = "0.13", optional = true }
 actix-files = { version = "0.6", optional = true }
-actix-multipart = { version = "0.5", optional = true }
+actix-multipart = { version = "0.6", optional = true }
 actix-service = { version = "2.0", optional = true }
 actix-web = { version = "4.3", features = ["rustls"], optional = true }
 actix-web-actors = { version = "4.2", optional = true }
 actix-web-httpauth = { version = "0.8", optional = true }
 
-ahash = { version = "=0.7", optional = true }
+ahash = { version = "0.8", optional = true }
 maplit = { version = "1", optional = true }
 ritelinked = { version = "0.3", optional = true }
 hashlink = { version = "0.8", optional = true }
@@ -95,11 +95,11 @@ hex = { version = "0.4", optional = true }
 hex-literal = { version = "0.3", optional = true }
 
 ipnetwork = { version = "0.20", optional = true }
-socket2 = { version = "0.4", optional = true }
+socket2 = { version = "0.5", optional = true }
 url = { version = "2", optional = true }
 
 num-cpus = { version = "1", package = "num_cpus", optional = true }
-memoffset = { version = "=0.7", optional = true }
+memoffset = { version = "0.8", optional = true }
 zerocopy = { version = "0.6", optional = true }
 
 once-cell = { version = "1", package = "once_cell", optional = true }
