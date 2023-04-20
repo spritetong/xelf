@@ -175,7 +175,7 @@ pub mod prelude {
     #[cfg(feature = "futures")]
     pub use ::futures::{
         self,
-        future::{self, join_all, poll_fn, poll_immediate, try_join_all, TryFuture},
+        future::{self, join_all, poll_fn, poll_immediate, try_join_all, TryFuture, TryFutureExt},
         stream::{BoxStream, LocalBoxStream, Stream},
         Sink,
     };
