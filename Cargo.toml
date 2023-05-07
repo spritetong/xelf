@@ -29,7 +29,7 @@ datetime = ["chrono", "num", "chrono-serde"]
 db = ["async", "collections", "datetime", "hashmap", "minimal", "ouroboros", "regex",
     "rust-decimal", "snowflake", "str", "sync", "sea-orm", "sqlx", "with-bytes",
     "with-serde", "with-rustls"]
-derive = ["derive-more", "num-enum", "smart-default", "strum"]
+derive = ["derive-more", "smart-default", "strum"]
 fs = ["io", "path-absolutize", "tempfile"]
 ffi = ["cfg-if", "hashlink", "sync"]
 future = []
@@ -69,7 +69,6 @@ bytestring = { version = "1", optional = true }
 chrono = { version = "0.4", optional = true }
 
 derive-more = { version = "0.99", package = "derive_more", optional = true }
-num-enum = { version = "0.6", package = "num_enum", optional = true }
 smart-default = { version = "0.7", optional = true }
 strum = { version = "0.24", features = ["derive"], optional = true }
 

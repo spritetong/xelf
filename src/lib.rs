@@ -206,9 +206,6 @@ pub mod prelude {
     #[cfg(feature = "maplit")]
     pub use ::maplit::{self, btreemap, btreeset, hashmap, hashset};
 
-    #[cfg(feature = "num-enum")]
-    pub use ::num_enum::{self, TryFromPrimitive};
-
     #[cfg(feature = "once-cell")]
     pub use once_cell::{
         self,
