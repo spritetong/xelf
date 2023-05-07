@@ -256,7 +256,9 @@ pub mod prelude {
     pub use crate::snowflake::*;
 
     #[cfg(feature = "strum")]
-    pub use ::strum::{self, AsRefStr, EnumIter, EnumMessage, IntoEnumIterator, IntoStaticStr};
+    pub use ::strum::{
+        self, AsRefStr, EnumIter, EnumMessage, FromRepr, IntoEnumIterator, IntoStaticStr,
+    };
 
     #[cfg(feature = "serde")]
     pub use ::serde::{
