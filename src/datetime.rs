@@ -29,6 +29,26 @@ pub fn utc_into_str(utc: DateTimeUtc) -> String {
     )
 }
 
+pub fn utc_now_micros() -> i64 {
+    let now = Utc::now();
+    now.timestamp_micros()
+}
+
+pub fn utc_timestamp_micros(micros: i64) -> DateTimeUtc {
+    utc_timestamp_micros_opt(micros)
+        .single()
+        .unwrap_or_else(utc_default)
+}
+
+pub fn utc_timestamp_micros_opt(micros: i64) -> chrono::LocalResult<DateTimeUtc> {
+    let (mut secs, mut micros) = (micros / 1_000_000, micros % 1_000_000);
+    if micros < 0 {
+        secs -= 1;
+        micros += 1_000_000;
+    }
+    Utc.timestamp_opt(secs, micros as u32 * 1_000)
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 
 /// Module to serialize and deserialize a **`DateTimeUtc`**
@@ -50,26 +70,29 @@ pub mod serde_x_utc {
             write!(formatter, "a formatted date and time string")
         }
 
+        // from microseconds
         fn visit_u64<E>(self, value: u64) -> Result<Self::Value, E>
         where
             E: de::Error,
         {
-            match Utc.timestamp_opt(value as i64, 0).single() {
+            match utc_timestamp_micros_opt(value as i64).single() {
                 Some(v) => Ok(v),
                 _ => Err(de::Error::invalid_type(Unexpected::Unsigned(value), &self)),
             }
         }
 
+        // from microseconds
         fn visit_i64<E>(self, value: i64) -> Result<Self::Value, E>
         where
             E: de::Error,
         {
-            match Utc.timestamp_opt(value, 0).single() {
+            match utc_timestamp_micros_opt(value).single() {
                 Some(v) => Ok(v),
                 _ => Err(de::Error::invalid_type(Unexpected::Signed(value), &self)),
             }
         }
 
+        // from seconds as float
         fn visit_f64<E>(self, value: f64) -> Result<Self::Value, E>
         where
             E: de::Error,
