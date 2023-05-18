@@ -996,7 +996,7 @@ mod tests {
             AsRefStr,
             EnumIter,
             EnumMessage,
-            TryFromPrimitive,
+            FromRepr,
             Serialize_repr,
             Deserialize_repr,
             SmartDefault,
@@ -1036,7 +1036,7 @@ mod tests {
             pub gender: Option<i16>,
             pub birth_year: Option<i32>,
             #[serde(default = "utc_default")]
-            #[default(_code = "utc_default()")]
+            #[default(utc_default())]
             pub create_time: DateTimeUtc,
             #[serde(default)]
             pub password_hash: String,

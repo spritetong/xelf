@@ -5,6 +5,24 @@ pub use ::sea_orm::prelude::DateTimeUtc;
 #[cfg(not(feature = "sea-orm"))]
 pub type DateTimeUtc = DateTime<Utc>;
 
+/// Unix timestamp in microseconds
+pub type UnixTimestampMicros = i64;
+
+pub trait DateTimeUtcRsx {
+    /// Convert days into microseconds.
+    fn micros_from_days(&self) -> Self;
+    /// Convert minutes into microseconds.
+    fn micros_from_mins(&self) -> Self;
+    /// Convert seconds into microseconds.
+    fn micros_from_secs(&self) -> Self;
+    /// Convert the UNIX timestamp in milliseconds into `DateTimeUtc`.
+    fn micros_as_unix_timestamp(&self) -> DateTimeUtc;
+    /// Convert the UNIX timestamp in milliseconds into `DateTimeUtc` with error.
+    fn micros_as_unix_timestamp_opt(&self) -> chrono::LocalResult<DateTimeUtc>;
+    /// Get the current UNIX timestamp in microseconds.
+    fn micros_now() -> Self;
+}
+
 /// Get the default value for DateTime<Utc>, the Unix Epoch at 1970-01-01T00:00:00Z.
 #[inline]
 pub fn utc_default() -> DateTimeUtc {
@@ -29,24 +47,40 @@ pub fn utc_into_str(utc: DateTimeUtc) -> String {
     )
 }
 
-pub fn utc_now_micros() -> i64 {
-    let now = Utc::now();
-    now.timestamp_micros()
-}
-
-pub fn utc_timestamp_micros(micros: i64) -> DateTimeUtc {
-    utc_timestamp_micros_opt(micros)
-        .single()
-        .unwrap_or_else(utc_default)
-}
-
-pub fn utc_timestamp_micros_opt(micros: i64) -> chrono::LocalResult<DateTimeUtc> {
-    let (mut secs, mut micros) = (micros / 1_000_000, micros % 1_000_000);
-    if micros < 0 {
-        secs -= 1;
-        micros += 1_000_000;
+impl DateTimeUtcRsx for UnixTimestampMicros {
+    #[inline]
+    fn micros_from_days(&self) -> Self {
+        self * (24 * 60 * 60 * 1_000_000)
     }
-    Utc.timestamp_opt(secs, micros as u32 * 1_000)
+
+    #[inline]
+    fn micros_from_mins(&self) -> Self {
+        self * (60 * 1_000_000)
+    }
+
+    #[inline]
+    fn micros_from_secs(&self) -> Self {
+        self * 1_000_000
+    }
+
+    fn micros_as_unix_timestamp(&self) -> DateTimeUtc {
+        self.micros_as_unix_timestamp_opt()
+            .single()
+            .unwrap_or_else(utc_default)
+    }
+
+    fn micros_as_unix_timestamp_opt(&self) -> chrono::LocalResult<DateTimeUtc> {
+        let (mut secs, mut micros) = (self / 1_000_000, self % 1_000_000);
+        if micros < 0 {
+            secs -= 1;
+            micros += 1_000_000;
+        }
+        Utc.timestamp_opt(secs, micros as u32 * 1_000)
+    }
+
+    fn micros_now() -> Self {
+        Utc::now().timestamp_micros()
+    }
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -70,23 +104,23 @@ pub mod serde_x_utc {
             write!(formatter, "a formatted date and time string")
         }
 
-        // from microseconds
+        // from seconds
         fn visit_u64<E>(self, value: u64) -> Result<Self::Value, E>
         where
             E: de::Error,
         {
-            match utc_timestamp_micros_opt(value as i64).single() {
+            match Utc.timestamp_millis_opt(value as i64).single() {
                 Some(v) => Ok(v),
                 _ => Err(de::Error::invalid_type(Unexpected::Unsigned(value), &self)),
             }
         }
 
-        // from microseconds
+        // from seconds
         fn visit_i64<E>(self, value: i64) -> Result<Self::Value, E>
         where
             E: de::Error,
         {
-            match utc_timestamp_micros_opt(value).single() {
+            match Utc.timestamp_millis_opt(value).single() {
                 Some(v) => Ok(v),
                 _ => Err(de::Error::invalid_type(Unexpected::Signed(value), &self)),
             }
@@ -113,6 +147,52 @@ pub mod serde_x_utc {
         {
             match DateTime::parse_from_rfc3339(value) {
                 Ok(v) => Ok(DateTime::<Utc>::from(v)),
+                _ => Err(de::Error::invalid_type(Unexpected::Str(value), &self)),
+            }
+        }
+    }
+
+    struct DeUtcMicrosVisitor;
+
+    impl<'de> de::Visitor<'de> for DeUtcMicrosVisitor {
+        type Value = UnixTimestampMicros;
+
+        fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+            write!(formatter, "a formatted date and time string")
+        }
+
+        // from microseconds
+        fn visit_u64<E>(self, value: u64) -> Result<Self::Value, E>
+        where
+            E: de::Error,
+        {
+            UnixTimestampMicros::try_from(value).map_err(|_| {
+                de::Error::invalid_type(Unexpected::Unsigned(value), &self)
+            })
+        }
+
+        // from microseconds
+        fn visit_i64<E>(self, value: i64) -> Result<Self::Value, E>
+        where
+            E: de::Error,
+        {
+            Ok(value)
+        }
+
+        // from microseconds as float
+        fn visit_f64<E>(self, value: f64) -> Result<Self::Value, E>
+        where
+            E: de::Error,
+        {
+            Ok(value as i64)
+        }
+
+        fn visit_str<E>(self, value: &str) -> Result<Self::Value, E>
+        where
+            E: de::Error,
+        {
+            match DateTime::parse_from_rfc3339(value) {
+                Ok(v) => Ok(DateTime::<Utc>::from(v).timestamp_micros()),
                 _ => Err(de::Error::invalid_type(Unexpected::Str(value), &self)),
             }
         }
@@ -153,12 +233,34 @@ pub mod serde_x_utc {
             deserializer.deserialize_f64(DeUtcVisitor)
         }
     }
+
+    pub mod micros {
+        use super::*;
+
+        /// Function to serializing a **`DateTimeUtc`**
+        pub fn serialize<S>(micros: UnixTimestampMicros, serializer: S) -> Result<S::Ok, S::Error>
+        where
+            S: Serializer,
+        {
+            serializer.serialize_i64(micros)
+        }
+
+        /// Function to deserializing a **`DateTimeUtc`**
+        pub fn deserialize<'de, D>(deserializer: D) -> Result<UnixTimestampMicros, D::Error>
+        where
+            D: de::Deserializer<'de>,
+        {
+            deserializer.deserialize_i64(DeUtcMicrosVisitor)
+        }
+    }
 }
 
 #[cfg(feature = "chrono-serde")]
 pub use serde_x_utc::{deserialize as de_x_utc, serialize as ser_x_utc};
 #[cfg(feature = "chrono-serde")]
 pub use serde_x_utc::{f64::deserialize as de_x_utc_f64, f64::serialize as ser_x_utc_f64};
+#[cfg(feature = "chrono-serde")]
+pub use serde_x_utc::{micros::deserialize as de_x_utc_micros, micros::serialize as ser_x_utc_micros};
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -178,7 +280,7 @@ mod tests {
             optional: Option<i32>,
             //#[serde(with = "serde_x_utc", default = "utc_default")]
             #[serde(default = "utc_default")]
-            #[default(_code = "utc_default()")]
+            #[default(utc_default())]
             birth_on: DateTime<Utc>,
         }
 
