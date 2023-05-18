@@ -6,12 +6,12 @@ pub use ::sea_orm::prelude::DateTimeUtc;
 pub type DateTimeUtc = DateTime<Utc>;
 
 /// Unix timestamp in microseconds
-pub type UnixTimestampMicros = i64;
+pub type UnixTimeMicros = i64;
 
 /// Duration in microseconds
 pub type DurationMicros = i64;
 
-pub trait UnixTimestampTrait: Sized {
+pub trait UnixTimestampRsx: Sized {
     /// Convert days into microseconds.
     fn micros_from_days(&self) -> Self;
 
@@ -26,6 +26,9 @@ pub trait UnixTimestampTrait: Sized {
 
     /// Convert seconds into microseconds.
     fn micros_from_secs_f64(secs: f64) -> Self;
+
+    /// Convert milliseconds into microseconds.
+    fn micros_from_millis(&self) -> Self;
 
     /// Convert the UNIX timestamp in milliseconds into `DateTimeUtc`.
     fn micros_as_unix_timestamp(&self) -> DateTimeUtc;
@@ -67,7 +70,7 @@ pub fn utc_into_str(utc: DateTimeUtc) -> String {
     )
 }
 
-impl UnixTimestampTrait for UnixTimestampMicros {
+impl UnixTimestampRsx for UnixTimeMicros {
     #[inline]
     fn micros_from_days(&self) -> Self {
         self * (24 * 60 * 60 * 1_000_000)
@@ -93,6 +96,10 @@ impl UnixTimestampTrait for UnixTimestampMicros {
         (secs * 1_000_000.0) as Self
     }
 
+    fn micros_from_millis(&self) -> Self {
+        self * 1_000
+    }
+
     fn micros_as_unix_timestamp(&self) -> DateTimeUtc {
         self.micros_as_unix_timestamp_opt()
             .single()
@@ -114,7 +121,7 @@ impl UnixTimestampTrait for UnixTimestampMicros {
 
     fn micros_from_utc_str(s: impl AsRef<str>) -> Option<Self> {
         let s = s.as_ref();
-        s.parse::<UnixTimestampMicros>().ok().or_else(|| {
+        s.parse::<UnixTimeMicros>().ok().or_else(|| {
             DateTime::parse_from_rfc3339(s)
                 .ok()
                 .map(|x| DateTime::<Utc>::from(x).timestamp_micros())
@@ -198,7 +205,7 @@ pub mod serde_x_utc {
     struct DeUtcMicrosVisitor;
 
     impl<'de> de::Visitor<'de> for DeUtcMicrosVisitor {
-        type Value = UnixTimestampMicros;
+        type Value = UnixTimeMicros;
 
         fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
             write!(formatter, "a formatted date and time string")
@@ -209,7 +216,7 @@ pub mod serde_x_utc {
         where
             E: de::Error,
         {
-            UnixTimestampMicros::try_from(value)
+            UnixTimeMicros::try_from(value)
                 .map_err(|_| de::Error::invalid_type(Unexpected::Unsigned(value), &self))
         }
 
@@ -280,7 +287,7 @@ pub mod serde_x_utc {
         use super::*;
 
         /// Function to serializing a **`DateTimeUtc`**
-        pub fn serialize<S>(micros: UnixTimestampMicros, serializer: S) -> Result<S::Ok, S::Error>
+        pub fn serialize<S>(micros: UnixTimeMicros, serializer: S) -> Result<S::Ok, S::Error>
         where
             S: Serializer,
         {
@@ -288,7 +295,7 @@ pub mod serde_x_utc {
         }
 
         /// Function to deserializing a **`DateTimeUtc`**
-        pub fn deserialize<'de, D>(deserializer: D) -> Result<UnixTimestampMicros, D::Error>
+        pub fn deserialize<'de, D>(deserializer: D) -> Result<UnixTimeMicros, D::Error>
         where
             D: de::Deserializer<'de>,
         {
@@ -340,11 +347,11 @@ mod tests {
 
         let utc = utc_from_str("2022-01-01T00:00:01.345677Z").unwrap();
         assert_eq!(
-            UnixTimestampMicros::micros_from_utc_str("2022-01-01T00:00:01.345677Z"),
+            UnixTimeMicros::micros_from_utc_str("2022-01-01T00:00:01.345677Z"),
             Some(utc.timestamp_micros())
         );
         assert_eq!(
-            UnixTimestampMicros::micros_from_utc_str(utc.timestamp_micros().to_string()),
+            UnixTimeMicros::micros_from_utc_str(utc.timestamp_micros().to_string()),
             Some(utc.timestamp_micros())
         );
     }
