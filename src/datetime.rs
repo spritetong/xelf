@@ -15,6 +15,9 @@ pub trait UnixTimestampTrait: Sized {
     /// Convert days into microseconds.
     fn micros_from_days(&self) -> Self;
 
+    /// Convert hours into microseconds.
+    fn micros_from_hours(&self) -> Self;
+
     /// Convert minutes into microseconds.
     fn micros_from_mins(&self) -> Self;
 
@@ -68,6 +71,11 @@ impl UnixTimestampTrait for UnixTimestampMicros {
     #[inline]
     fn micros_from_days(&self) -> Self {
         self * (24 * 60 * 60 * 1_000_000)
+    }
+
+    #[inline]
+    fn micros_from_hours(&self) -> Self {
+        self * (60 * 60 * 1_000_000)
     }
 
     #[inline]
