@@ -8,21 +8,36 @@ pub type DateTimeUtc = DateTime<Utc>;
 /// Unix timestamp in microseconds
 pub type UnixTimestampMicros = i64;
 
+/// Duration in microseconds
+pub type DurationMicros = i64;
+
 pub trait UnixTimestampTrait: Sized {
     /// Convert days into microseconds.
     fn micros_from_days(&self) -> Self;
+
     /// Convert minutes into microseconds.
     fn micros_from_mins(&self) -> Self;
+
     /// Convert seconds into microseconds.
     fn micros_from_secs(&self) -> Self;
+
+    /// Convert seconds into microseconds.
+    fn micros_from_secs_f64(secs: f64) -> Self;
+
     /// Convert the UNIX timestamp in milliseconds into `DateTimeUtc`.
     fn micros_as_unix_timestamp(&self) -> DateTimeUtc;
+
     /// Convert the UNIX timestamp in milliseconds into `DateTimeUtc` with error.
     fn micros_as_unix_timestamp_opt(&self) -> chrono::LocalResult<DateTimeUtc>;
+
     /// Get the current UNIX timestamp in microseconds.
     fn micros_now() -> Self;
+
     /// Get the UNIX timestamp from a UTC string or a timestamp in microseconds.
     fn micros_from_utc_str(s: impl AsRef<str>) -> Option<Self>;
+
+    /// Convert into a UTC string.
+    fn micros_into_utc_str(&self) -> String;
 }
 
 /// Get the default value for DateTime<Utc>, the Unix Epoch at 1970-01-01T00:00:00Z.
@@ -65,6 +80,11 @@ impl UnixTimestampTrait for UnixTimestampMicros {
         self * 1_000_000
     }
 
+    #[inline]
+    fn micros_from_secs_f64(secs: f64) -> Self {
+        (secs * 1_000_000.0) as Self
+    }
+
     fn micros_as_unix_timestamp(&self) -> DateTimeUtc {
         self.micros_as_unix_timestamp_opt()
             .single()
@@ -91,6 +111,10 @@ impl UnixTimestampTrait for UnixTimestampMicros {
                 .ok()
                 .map(|x| DateTime::<Utc>::from(x).timestamp_micros())
         })
+    }
+
+    fn micros_into_utc_str(&self) -> String {
+        utc_into_str(self.micros_as_unix_timestamp())
     }
 }
 
