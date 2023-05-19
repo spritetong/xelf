@@ -281,7 +281,7 @@ pub mod prelude {
         sync::{broadcast, mpsc, Mutex, RwLock},
     };
     #[cfg(feature = "tokio-rustls")]
-    pub use ::tokio_rustls::{self, webpki};
+    pub use ::tokio_rustls;
     #[cfg(feature = "tokio-stream")]
     pub use ::tokio_stream::{
         self,
