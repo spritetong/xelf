@@ -70,7 +70,7 @@ chrono = { version = "0.4", optional = true }
 
 derive-more = { version = "0.99", package = "derive_more", optional = true }
 smart-default = { version = "0.7", optional = true }
-strum = { version = "0.24", features = ["derive"], optional = true }
+strum = { version = "0.25", features = ["derive"], optional = true }
 
 cfg-if = { version = "1", optional = true }
 dotenv = { version = "0.15", optional = true }
@@ -94,15 +94,15 @@ hex = { version = "0.4", optional = true }
 hex-literal = { version = "0.4", optional = true }
 
 ipnetwork = { version = "0.20", optional = true }
-socket2 = { version = "0.4", optional = true }
+socket2 = { version = "0.5", optional = true }
 url = { version = "2", optional = true }
 
 num-cpus = { version = "1", package = "num_cpus", optional = true }
-memoffset = { version = "0.8", optional = true }
+memoffset = { version = "0.9", optional = true }
 zerocopy = { version = "0.6", optional = true }
 
 once-cell = { version = "1", package = "once_cell", optional = true }
-ouroboros = { version = "0.15", optional = true }
+ouroboros = { version = "0.17", optional = true }
 
 regex = { version = "1", optional = true }
 
