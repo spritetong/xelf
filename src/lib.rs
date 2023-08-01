@@ -236,10 +236,7 @@ pub mod prelude {
     pub use ::rustls_pemfile;
 
     #[cfg(feature = "sea-orm")]
-    pub use ::sea_orm::{
-        self,
-        strum::{AsRefStr as _, EnumMessage as _, IntoEnumIterator as _},
-    };
+    pub use ::sea_orm;
     #[cfg(feature = "sqlx")]
     pub use ::sqlx;
 

@@ -27,7 +27,7 @@ async = ["async-stream", "async-trait", "flume", "future", "futures", "futures-u
 collections = ["maplit", "smallvec", "vec"]
 datetime = ["chrono", "num", "chrono-serde"]
 db = ["async", "collections", "datetime", "hashmap", "minimal", "ouroboros", "regex",
-    "rust-decimal", "snowflake", "str", "sync", "sea-orm", "sqlx", "with-bytes",
+    "rust-decimal", "snowflake", "str", "sync", "sea-orm", "sqlx", "strum", "with-bytes",
     "with-serde", "with-rustls"]
 derive = ["derive-more", "smart-default", "strum"]
 fs = ["io", "path-absolutize", "tempfile"]
@@ -122,10 +122,10 @@ flume = { version = "0.10", optional = true }
 parking-lot = { version = "0.12", package = "parking_lot", optional = true }
 
 rust-decimal = { version = "1", package = "rust_decimal", optional = true }
-sea-orm = { version = "0.11", features = [
+sea-orm = { version = "0.12", features = [
     "sqlx-postgres", "sqlx-sqlite", "runtime-tokio-rustls", "runtime-tokio"
     ], optional = true }
-sqlx = { version = "0.6", features = [
+sqlx = { version = "0.7", features = [
     "runtime-tokio-rustls", "postgres", "sqlite", "migrate", "any"
     ], optional = true }
 

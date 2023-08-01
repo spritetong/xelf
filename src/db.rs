@@ -1,3 +1,5 @@
+#![allow(ambiguous_glob_reexports)]
+
 use crate::prelude::*;
 
 pub use sea_orm::{
