@@ -1,7 +1,6 @@
 #![allow(ambiguous_glob_reexports)]
 
 use crate::prelude::*;
-
 pub use sea_orm::{
     entity::prelude::*,
     sea_query::{
@@ -14,6 +13,7 @@ pub use sea_orm::{
     NotSet, Order, QueryOrder, QuerySelect, QueryTrait, SelectGetableValue, SelectModel,
     SelectTwoModel, SelectorRaw, Set, Statement, StreamTrait, TransactionTrait, Unchanged, Values,
 };
+pub use strum::EnumIter;
 
 pub type DbResult<T> = Result<T, DbErr>;
 
@@ -377,7 +377,7 @@ impl RawSqlBuilder {
     pub fn into_values<T, C>(self) -> SelectorRaw<SelectGetableValue<T, C>>
     where
         T: sea_orm::TryGetableMany,
-        C: sea_orm::Iterable + sea_orm::strum::IntoEnumIterator + Iden,
+        C: sea_orm::Iterable + strum::IntoEnumIterator + Iden,
     {
         SelectorRaw::<SelectGetableValue<T, C>>::with_columns::<T, C>(self.into())
     }
@@ -547,7 +547,7 @@ impl SqlHelper {
     pub fn into_values<T, C>(self) -> SelectorRaw<SelectGetableValue<T, C>>
     where
         T: sea_orm::TryGetableMany,
-        C: sea_orm::Iterable + sea_orm::strum::IntoEnumIterator + Iden,
+        C: sea_orm::Iterable + strum::IntoEnumIterator + Iden,
     {
         SelectorRaw::<SelectGetableValue<T, C>>::with_columns::<T, C>(self.into())
     }
@@ -637,7 +637,7 @@ impl From<Statement> for SqlHelper {
         let mut sql_bytes = Bytes::new();
         let mut start = 0;
         static RE: Lazy<Regex> =
-            Lazy::new(|| Regex::new(r#"(?:\{\{|\}\}|\{:[[:word:]]+\})"#).unwrap());
+            Lazy::new(|| Regex::new(r"(?:\{\{|\}\}|\{:[[:word:]]+\})").unwrap());
         let re = &*RE;
         while let Some(m) = re.find_at(sql.as_str(), start) {
             if sql_bytes.is_empty() {

@@ -129,7 +129,7 @@ impl<T: AsRef<str>> StrRsx for T {
             }
         }
 
-        static RE: Lazy<Regex> = Lazy::new(|| Regex::new(r#"(?:\{\{|\}\}|\{:?[[:word:]]+\})"#).unwrap());
+        static RE: Lazy<Regex> = Lazy::new(|| Regex::new(r"(?:\{\{|\}\}|\{:?[[:word:]]+\})").unwrap());
         let replacer = _Replacer(f);
         RE.replace_all(self.as_ref(), replacer)
     }

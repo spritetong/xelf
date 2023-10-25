@@ -108,21 +108,6 @@ pub mod prelude {
 
     ////////////////////////////////////////////////////////////////////////////
 
-    #[cfg(feature = "actix")]
-    pub use ::actix;
-    #[cfg(feature = "actix-files")]
-    pub use ::actix_files;
-    #[cfg(feature = "actix-multipart")]
-    pub use ::actix_multipart;
-    #[cfg(feature = "actix-service")]
-    pub use ::actix_service;
-    #[cfg(feature = "actix-web")]
-    pub use ::actix_web;
-    #[cfg(feature = "actix-web-actors")]
-    pub use ::actix_web_actors;
-    #[cfg(feature = "actix-web-httpauth")]
-    pub use ::actix_web_httpauth;
-
     #[cfg(feature = "ahash")]
     pub use ::ahash::{self, AHashMap, AHashSet};
     #[cfg(any(feature = "ahash", feature = "collections"))]

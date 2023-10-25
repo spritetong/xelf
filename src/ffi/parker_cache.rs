@@ -17,7 +17,7 @@ impl ParkerCache {
     }
 
     pub fn get(&self) -> (UnparkerGuard, ParkerGuard) {
-        let p = self.pop().unwrap_or_else(Parker::new);
+        let p = self.pop().unwrap_or_default();
         let u = p.unparker().clone();
         (
             UnparkerGuard(ManuallyDrop::new(u)),

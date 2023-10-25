@@ -10,7 +10,7 @@ pub fn realpath<P: AsRef<Path>>(path: P) -> PathBuf {
     match path.canonicalize() {
         Ok(v) => {
             let s = v.to_string_lossy();
-            if let Some(stripped) = s.strip_prefix(r#"\\?\"#) {
+            if let Some(stripped) = s.strip_prefix(r"\\?\") {
                 stripped.into()
             } else {
                 s.into_owned().into()
