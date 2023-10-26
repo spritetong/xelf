@@ -281,7 +281,7 @@ pub mod prelude {
     pub use ::url::{self, Url};
 
     #[cfg(feature = "zerocopy")]
-    pub use ::zerocopy::{self, AsBytes, FromBytes};
+    pub use ::zerocopy::{self, AsBytes, FromBytes, FromZeroes};
 }
 
 /// Implement Default for type T has T::new() -> T

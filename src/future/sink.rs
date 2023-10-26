@@ -1,22 +1,24 @@
-use futures::{stream::FusedStream, Sink, SinkExt, Stream};
+use futures::{stream::FusedStream, Sink, Stream};
 use pin_project::pin_project;
 use std::{
     pin::Pin,
     task::{Context, Poll},
 };
 
-pub trait SinkRsx<Item>: SinkExt<Item> {
+impl<T: ?Sized, Item> SinkRsx<Item> for T where T: Sink<Item> {}
+
+pub trait SinkRsx<Item>: Sink<Item> {
     /// Transforms the error returned by the sink.
     fn safe_sink_map_err<E, F>(self, f: F) -> SafeSinkMapErr<Self, F>
     where
-        F: FnOnce(Self::Error) -> E,
+        F: FnMut(Self::Error) -> E,
         Self: Sized,
     {
         SafeSinkMapErr::new(self, f)
     }
 }
 
-/// Sink for the [`sink_map_err`](super::SinkExt::sink_map_err) method.
+/// Sink for the [`safe_sink_map_err`](super::SinkRsx::safe_sink_map_err) method.
 #[pin_project]
 #[derive(Debug, Clone)]
 pub struct SafeSinkMapErr<Si, F> {
@@ -37,40 +39,28 @@ impl<Si, F> SafeSinkMapErr<Si, F> {
 impl<Si, F, E, Item> Sink<Item> for SafeSinkMapErr<Si, F>
 where
     Si: Sink<Item>,
-    F: Fn(Si::Error) -> E,
+    F: FnMut(Si::Error) -> E,
 {
     type Error = E;
 
     fn poll_ready(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Result<(), Self::Error>> {
-        self.as_mut()
-            .project()
-            .sink
-            .poll_ready(cx)
-            .map_err(|e| (self.as_mut().f)(e))
+        let this = self.as_mut().project();
+        this.sink.poll_ready(cx).map_err(|e| (this.f)(e))
     }
 
     fn start_send(mut self: Pin<&mut Self>, item: Item) -> Result<(), Self::Error> {
-        self.as_mut()
-            .project()
-            .sink
-            .start_send(item)
-            .map_err(|e| (self.as_mut().f)(e))
+        let this = self.as_mut().project();
+        this.sink.start_send(item).map_err(|e| (this.f)(e))
     }
 
     fn poll_flush(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Result<(), Self::Error>> {
-        self.as_mut()
-            .project()
-            .sink
-            .poll_flush(cx)
-            .map_err(|e| (self.as_mut().f)(e))
+        let this = self.as_mut().project();
+        this.sink.poll_flush(cx).map_err(|e| (this.f)(e))
     }
 
     fn poll_close(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Result<(), Self::Error>> {
-        self.as_mut()
-            .project()
-            .sink
-            .poll_close(cx)
-            .map_err(|e| (self.as_mut().f)(e))
+        let this = self.as_mut().project();
+        this.sink.poll_close(cx).map_err(|e| (this.f)(e))
     }
 }
 
