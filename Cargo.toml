@@ -1,6 +1,6 @@
 [package]
 name = "rsx"
-version = "0.3.5"
+version = "0.3.6"
 edition = "2021"
 
 [lib]
@@ -89,7 +89,7 @@ url = { version = "2", optional = true }
 
 num-cpus = { version = "1", package = "num_cpus", optional = true }
 memoffset = { version = "0.9", optional = true }
-zerocopy = { version = "0.7", optional = true }
+zerocopy = { version = "0.7", features = ["derive"], optional = true }
 
 once-cell = { version = "1", package = "once_cell", optional = true }
 ouroboros = { version = "0.18", optional = true }

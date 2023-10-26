@@ -8,7 +8,7 @@ use std::{
 };
 
 #[pin_project]
-pub struct DuplexStream<Si, St, Item> {
+pub struct DuplexStream<Si, Item, St> {
     #[pin]
     sink: Si,
     #[pin]
@@ -16,7 +16,7 @@ pub struct DuplexStream<Si, St, Item> {
     _phantom: PhantomData<Item>,
 }
 
-impl<Si, St, Item> DuplexStream<Si, St, Item> {
+impl<Si, Item, St> DuplexStream<Si, Item, St> {
     pub fn new(sink: Si, stream: St) -> Self {
         Self {
             sink,
@@ -74,7 +74,7 @@ impl<Si, St, Item> DuplexStream<Si, St, Item> {
     }
 }
 
-impl<Si: Sink<Item>, St: Stream, Item> Sink<Item> for DuplexStream<Si, St, Item> {
+impl<Si: Sink<Item>, Item, St: Stream> Sink<Item> for DuplexStream<Si, Item, St> {
     type Error = Si::Error;
 
     #[inline]
@@ -99,7 +99,7 @@ impl<Si: Sink<Item>, St: Stream, Item> Sink<Item> for DuplexStream<Si, St, Item>
 }
 
 // Forwarding impl of Stream from the underlying sink
-impl<Si: Sink<Item>, St: Stream, Item> Stream for DuplexStream<Si, St, Item> {
+impl<Si: Sink<Item>, Item, St: Stream> Stream for DuplexStream<Si, Item, St> {
     type Item = St::Item;
 
     #[inline]
@@ -114,7 +114,7 @@ impl<Si: Sink<Item>, St: Stream, Item> Stream for DuplexStream<Si, St, Item> {
 }
 
 // Forwarding impl of FusedStream from the underlying sink
-impl<Si: Sink<Item>, St: FusedStream, Item> FusedStream for DuplexStream<Si, St, Item> {
+impl<Si: Sink<Item>, Item, St: FusedStream> FusedStream for DuplexStream<Si, Item, St> {
     fn is_terminated(&self) -> bool {
         self.stream.is_terminated()
     }
