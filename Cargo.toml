@@ -8,7 +8,7 @@ name = "rsx"
 path = "src/lib.rs"
 
 [features]
-default = ["full"]
+default = ["minimal"]
 minimal = ["datetime", "collections", "derive", "io", "memoffset", "once-cell"]
 common = ["minimal", "async", "cfg-if", "fs", "hashmap", "net", "ouroboros", "ptr", "regex",
           "str", "sync", "with-bytes", "with-hex", "with-log", "with-serde"]
@@ -30,7 +30,7 @@ db = ["async", "collections", "datetime", "hashmap", "minimal", "ouroboros", "re
 derive = ["derive-more", "smart-default", "strum"]
 fs = ["io", "path-absolutize", "tempfile"]
 ffi = ["cfg-if", "hashlink", "sync"]
-future = []
+future = ["futures", "futures-util", "pin-project"]
 hashmap = ["ahash", "hashlink", "maplit"]
 io = []
 json = ["base64", "serde", "serde-json", "num", "collections", "with-hex"]

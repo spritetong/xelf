@@ -28,36 +28,6 @@ pub trait StrRsx {
         F: Fn(&str, &mut String);
 }
 
-/// Extension for String.
-pub trait StringRsx {
-    /// Assign a str slice to this string, replace the whole old content.
-    ///
-    /// # Arguments
-    ///
-    /// * source: the source string to copy from.
-    ///
-    /// # Exmaples
-    ///
-    /// ```
-    /// use rsx::str::*;
-    ///
-    /// let mut s = String::from("abc");
-    /// s.assign("12345");
-    ///
-    /// assert_eq!(s, "12345");
-    /// ```
-    ///
-    fn assign<T: AsRef<str>>(&mut self, source: T);
-}
-
-impl StringRsx for String {
-    #[inline]
-    fn assign<T: AsRef<str>>(&mut self, source: T) {
-        self.clear();
-        *self += source.as_ref();
-    }
-}
-
 impl<T: AsRef<str>> StrRsx for T {
     #[cfg(feature = "ffi")]
     #[inline]
@@ -84,7 +54,7 @@ impl<T: AsRef<str>> StrRsx for T {
     ///
     /// A name of an argument is wrapped by {}, like "{name}".
     ///
-    /// "{{" is converted into "{", and "}}" is converted into "}".
+    /// "{{" will be converted into "{", and "}}" well be converted into "}".
     ///
     /// # Arguments
     ///
@@ -94,7 +64,7 @@ impl<T: AsRef<str>> StrRsx for T {
     ///
     /// ```
     /// use rsx::str::StrRsx;
-    /// 
+    ///
     /// assert_eq!("{{".render(|_, _| ()), "{");
     /// assert_eq!("}}".render(|_, _| ()), "}");
     /// assert_eq!(
@@ -129,7 +99,8 @@ impl<T: AsRef<str>> StrRsx for T {
             }
         }
 
-        static RE: Lazy<Regex> = Lazy::new(|| Regex::new(r"(?:\{\{|\}\}|\{:?[[:word:]]+\})").unwrap());
+        static RE: Lazy<Regex> =
+            Lazy::new(|| Regex::new(r"(?:\{\{|\}\}|\{:?[[:word:]]+\})").unwrap());
         let replacer = _Replacer(f);
         RE.replace_all(self.as_ref(), replacer)
     }

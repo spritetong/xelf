@@ -8,6 +8,8 @@ pub mod db;
 pub mod ffi;
 #[cfg(feature = "fs")]
 pub mod fs;
+#[cfg(feature = "future")]
+pub mod future;
 #[cfg(feature = "json")]
 pub mod json;
 #[cfg(feature = "net")]
@@ -157,11 +159,14 @@ pub mod prelude {
     #[cfg(feature = "fs")]
     pub use crate::fs::*;
 
+    #[cfg(feature = "future")]
+    pub use crate::future::*;
+
     #[cfg(feature = "futures")]
     pub use ::futures::{
         self,
         future::{self, join_all, poll_fn, poll_immediate, try_join_all, TryFuture, TryFutureExt},
-        stream::{BoxStream, LocalBoxStream, Stream},
+        stream::{BoxStream, FusedStream, LocalBoxStream, Stream},
         Sink,
     };
     #[cfg(feature = "futures-util")]

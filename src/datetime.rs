@@ -52,10 +52,13 @@ pub fn utc_default() -> DateTimeUtc {
     Utc.timestamp_opt(0, 0).unwrap()
 }
 
+/// Parses an RFC 3339 date-and-time string into a `DateTimeUtc` value.
 pub fn utc_from_str(s: &str) -> chrono::ParseResult<DateTimeUtc> {
     DateTime::parse_from_rfc3339(s).map(DateTime::<Utc>::from)
 }
 
+/// Convert a `DateTimeUtc` value into an RFC 3339 date-and-time string
+/// with the format `YYYY-MM-DDTHH:MM:SS.SSSSSSZ`.
 pub fn utc_into_str(utc: DateTimeUtc) -> String {
     let n = utc.naive_local();
     format!(
