@@ -1,3 +1,4 @@
+use super::duplex::DuplexStream;
 use futures::Sink;
 use pin_project::pin_project;
 use std::{
@@ -5,10 +6,18 @@ use std::{
     pin::Pin,
     task::{Context, Poll},
 };
-use tokio::sync::mpsc::{Receiver, UnboundedSender};
+use tokio::sync::mpsc::{Receiver, Sender, UnboundedSender};
+use tokio_stream::wrappers::ReceiverStream;
 use tokio_util::sync::PollSender;
 
-pub type MpscStream<S, R> = super::duplex::DuplexStream<PollSender<S>, Receiver<R>, S>;
+pub type MpscStream<S, R> = DuplexStream<PollSender<S>, S, ReceiverStream<R>>;
+
+pub fn tokio_mpsc_stream<S, R>(sender: Sender<S>, receiver: Receiver<R>) -> MpscStream<S, R>
+where
+    S: Send + 'static,
+{
+    DuplexStream::new(PollSender::new(sender), ReceiverStream::new(receiver))
+}
 
 #[pin_project]
 pub struct UnboundedSink<T> {
