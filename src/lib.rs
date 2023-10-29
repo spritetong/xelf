@@ -14,12 +14,8 @@ pub mod future;
 pub mod json;
 #[cfg(feature = "net")]
 pub mod net;
-#[cfg(feature = "num")]
-pub mod num;
 #[cfg(feature = "serde")]
 pub mod serde;
-#[cfg(feature = "signal")]
-pub mod signal;
 #[cfg(feature = "snowflake")]
 pub mod snowflake;
 #[cfg(feature = "str")]
@@ -29,8 +25,8 @@ pub mod vec;
 
 pub mod prelude {
     pub use crate::{
-        impl_default_by_new, ok, ok_or, ok_or_break, ok_or_continue, ok_or_return, some_or,
-        some_or_break, some_or_continue, some_or_return, uninit_assume_init, zeroed_init, If,
+        ok, ok_or, ok_or_break, ok_or_continue, ok_or_return, some_or, some_or_break,
+        some_or_continue, some_or_return, uninit_assume_init, zeroed_init, If,
     };
 
     #[cfg(feature = "future")]
@@ -71,8 +67,8 @@ pub mod prelude {
         self, IpAddr, Ipv4Addr, Ipv6Addr, SocketAddr, SocketAddrV4, SocketAddrV6, ToSocketAddrs,
     };
 
-    #[cfg(feature = "num")]
-    pub use crate::num::{Float as _, Num as _};
+    #[cfg(feature = "num-traits")]
+    pub use num_traits::{self, AsPrimitive, Float, FromPrimitive, PrimInt};
 
     #[cfg(feature = "serde")]
     pub use crate::serde::*;
@@ -144,13 +140,13 @@ pub mod prelude {
         sync::{Parker, ShardedLock, Unparker},
     };
 
-    #[cfg(feature = "derive-more")]
+    #[cfg(feature = "derive_more")]
     pub use ::derive_more::{self, AsMut, AsRef, Deref, DerefMut, Display};
 
     #[cfg(feature = "dotenv")]
     pub use ::dotenv;
 
-    #[cfg(feature = "env-logger")]
+    #[cfg(feature = "env_logger")]
     pub use ::env_logger;
 
     #[cfg(feature = "flume")]
@@ -187,7 +183,7 @@ pub mod prelude {
     #[cfg(feature = "ipnetwork")]
     pub use ::ipnetwork::{self, IpNetwork, Ipv4Network, Ipv6Network};
 
-    #[cfg(feature = "num-cpus")]
+    #[cfg(feature = "num_cpus")]
     pub use ::num_cpus;
 
     #[cfg(feature = "memoffset")]
@@ -196,7 +192,7 @@ pub mod prelude {
     #[cfg(feature = "maplit")]
     pub use ::maplit::{self, btreemap, btreeset, hashmap, hashset};
 
-    #[cfg(feature = "once-cell")]
+    #[cfg(feature = "once_cell")]
     pub use once_cell::{
         self,
         sync::{Lazy, OnceCell},
@@ -205,7 +201,7 @@ pub mod prelude {
     #[cfg(feature = "ouroboros")]
     pub use ::ouroboros::{self, self_referencing};
 
-    #[cfg(feature = "parking-lot")]
+    #[cfg(feature = "parking_lot")]
     pub use ::parking_lot::{self, Mutex as PlMutex, RwLock as PlRwLock};
 
     #[cfg(feature = "path-absolutize")]
@@ -217,7 +213,7 @@ pub mod prelude {
     #[cfg(feature = "regex")]
     pub use ::regex::{self, Regex};
 
-    #[cfg(feature = "rust-decimal")]
+    #[cfg(feature = "rust_decimal")]
     pub use ::rust_decimal::{self, Decimal};
 
     #[cfg(feature = "rustls")]
@@ -251,11 +247,11 @@ pub mod prelude {
         ser::Serializer,
         Deserialize, Serialize,
     };
-    #[cfg(feature = "serde-json")]
+    #[cfg(feature = "serde_json")]
     pub use ::serde_json::{self, json, Number, Number as JsonNumber, Value as Json};
-    #[cfg(feature = "serde-json")]
+    #[cfg(feature = "serde_json")]
     pub type JsonMap = ::serde_json::Map<String, Json>;
-    #[cfg(feature = "serde-repr")]
+    #[cfg(feature = "serde_repr")]
     pub use ::serde_repr::{self, Deserialize_repr, Serialize_repr};
 
     #[cfg(feature = "tempfile")]
@@ -282,18 +278,6 @@ pub mod prelude {
 
     #[cfg(feature = "zerocopy")]
     pub use ::zerocopy::{self, AsBytes, FromBytes, FromZeroes};
-}
-
-/// Implement Default for type T has T::new() -> T
-#[macro_export]
-macro_rules! impl_default_by_new {
-    ($type:ident) => {
-        impl Default for $type {
-            fn default() -> Self {
-                $type::new()
-            }
-        }
-    };
 }
 
 /// Create an object and fill its memory with zero.
@@ -326,26 +310,6 @@ macro_rules! uninit_assume_init {
             #[allow(invalid_value)]
             ::std::mem::MaybeUninit::uninit().assume_init()
         }
-    };
-}
-
-/// Define a literal C-string with a NUL terminator.
-///
-/// # Examples
-///
-/// ```
-/// use rsx::cstr;
-///
-/// let name: &std::ffi::CStr = cstr!("John");
-///
-/// assert_eq!(name.to_str(), Ok("John"));
-/// assert_eq!(unsafe { *name.as_ptr().add(4) }, 0);
-/// ```
-#[cfg(feature = "ffi")]
-#[macro_export]
-macro_rules! cstr {
-    ($s:literal) => {
-        unsafe { ::std::mem::transmute::<_, &::std::ffi::CStr>(concat!($s, "\0")) }
     };
 }
 
@@ -470,18 +434,4 @@ macro_rules! some_or_continue {
     ($expr:expr $(,)?) => {
         some_or!($expr, continue)
     };
-}
-
-////////////////////////////////////////////////////////////////////////////////
-
-#[cfg(test)]
-mod tests {
-    #[cfg(feature = "ffi")]
-    #[test]
-    fn test_cstr_macro() {
-        let name: &std::ffi::CStr = cstr!("John");
-
-        assert_eq!(name.to_str(), Ok("John"));
-        assert_eq!(unsafe { *name.as_ptr().add(4) }, 0);
-    }
 }

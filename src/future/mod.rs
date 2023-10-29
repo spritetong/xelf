@@ -1,10 +1,14 @@
 mod duplex;
 mod mpsc;
+#[cfg(feature = "signal")]
+mod signal;
 mod sink;
 
 pub use duplex::DuplexStream;
 #[cfg(all(feature = "tokio", feature = "tokio-stream", feature = "tokio-util"))]
 pub use mpsc::{tokio_mpsc_stream, MpscStream, UnboundedSink};
+#[cfg(feature = "signal")]
+pub use signal::*;
 pub use sink::SinkRsx;
 
 #[macro_export]

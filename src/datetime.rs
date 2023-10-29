@@ -139,7 +139,7 @@ impl UnixTimestampRsx for UnixTimeMicros {
 ////////////////////////////////////////////////////////////////////////////////
 
 /// Module to serialize and deserialize a **`DateTimeUtc`**
-#[cfg(feature = "chrono-serde")]
+#[cfg(feature = "serde")]
 pub mod serde_x_utc {
     use super::*;
     use ::serde::{
@@ -307,11 +307,11 @@ pub mod serde_x_utc {
     }
 }
 
-#[cfg(feature = "chrono-serde")]
+#[cfg(feature = "serde")]
 pub use serde_x_utc::{deserialize as de_x_utc, serialize as ser_x_utc};
-#[cfg(feature = "chrono-serde")]
+#[cfg(feature = "serde")]
 pub use serde_x_utc::{f64::deserialize as de_x_utc_f64, f64::serialize as ser_x_utc_f64};
-#[cfg(feature = "chrono-serde")]
+#[cfg(feature = "serde")]
 pub use serde_x_utc::{
     micros::deserialize as de_x_utc_micros, micros::serialize as ser_x_utc_micros,
 };
@@ -320,7 +320,7 @@ pub use serde_x_utc::{
 
 #[cfg(test)]
 mod tests {
-    #[cfg(feature = "chrono-serde")]
+    #[cfg(feature = "serde")]
     #[test]
     fn test_utc_default() {
         use super::*;
@@ -328,7 +328,7 @@ mod tests {
 
         #[derive(Clone, Debug, SmartDefault, Serialize, Deserialize)]
         struct Person {
-            #[serde(default = "Default::default")]
+            #[serde(default)]
             name: String,
             year: i32,
             optional: Option<i32>,

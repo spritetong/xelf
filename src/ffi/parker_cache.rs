@@ -2,6 +2,7 @@ use crossbeam::{
     queue::SegQueue,
     sync::{Parker, Unparker},
 };
+#[cfg(feature = "async")]
 use futures::Future;
 use std::mem::ManuallyDrop;
 
@@ -9,13 +10,13 @@ pub struct ParkerCache {
     q: SegQueue<usize>,
 }
 
-crate::impl_default_by_new!(ParkerCache);
-
-impl ParkerCache {
-    pub fn new() -> Self {
+impl Default for ParkerCache {
+    fn default() -> Self {
         Self { q: SegQueue::new() }
     }
+}
 
+impl ParkerCache {
     pub fn get(&self) -> (UnparkerGuard, ParkerGuard) {
         let p = self.pop().unwrap_or_default();
         let u = p.unparker().clone();
@@ -168,7 +169,7 @@ mod tests {
 
     #[test]
     fn test_parker_cache() {
-        let cache = ParkerCache::new();
+        let cache = ParkerCache::default();
 
         {
             let (_, _p) = cache.get();
@@ -191,7 +192,7 @@ mod tests {
         //use std::time::Duration;
         use tokio::runtime::Runtime;
 
-        let cache = ParkerCache::new();
+        let cache = ParkerCache::default();
         let rt = Runtime::new().expect("Failed to construct Runtime");
         for _ in 0..10000 {
             let mut uncopy = String::from("Borrowed");

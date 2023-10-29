@@ -9,7 +9,7 @@ use ::tokio_stream::StreamMap;
 /// use rsx::prelude::*;
 ///
 /// async fn test_ctrl_c() {
-///     let mut stream = rsx::signal::merge_ctrl_c(tokio_stream::empty().boxed());
+///     let mut stream = rsx::future::merge_ctrl_c(tokio_stream::empty().boxed());
 ///     println!("Please input Ctrl+C ...");
 ///     let _ = stream.next().await;
 ///     println!("Ok!");

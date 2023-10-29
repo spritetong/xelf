@@ -15,15 +15,15 @@ macro_rules! arc_from_handle {
     };
 }
 
-crate::impl_default_by_new!(ArcHandleSet);
-
-impl ArcHandleSet {
-    pub fn new() -> Self {
+impl Default for ArcHandleSet {
+    fn default() -> Self {
         Self {
             map: RwLock::new(LinkedHashMap::new()),
         }
     }
+}
 
+impl ArcHandleSet {
     pub fn insert<T: 'static>(&self, arc: Arc<T>) -> ArcHandle {
         fn drop_arc<T: Sized>(h: ArcHandle) {
             drop(arc_from_handle!(h, T));
@@ -129,7 +129,7 @@ mod tests {
 
     #[test]
     fn test_arc_handle_set() {
-        let set = ArcHandleSet::new();
+        let set = ArcHandleSet::default();
 
         let a1 = Arc::new(1);
         let h1 = set.insert(a1.clone());

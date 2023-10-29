@@ -1,17 +1,17 @@
-#[cfg(feature = "num")]
-use crate::num::{Float, Num};
 use base64::{engine::general_purpose::STANDARD as base64_standard, Engine as _};
+#[cfg(feature = "num")]
+use num_traits::{Float, FromPrimitive, PrimInt};
 use serde::{de, ser};
 use std::{fmt, marker::PhantomData, str::FromStr};
 
 #[cfg(feature = "num")]
 #[derive(Default)]
-struct DeNumVisitor<T: Num> {
+struct DeNumVisitor<T: Default + PrimInt> {
     _phantom: std::marker::PhantomData<T>,
 }
 
 #[cfg(feature = "num")]
-impl<'de, T: Num> de::Visitor<'de> for DeNumVisitor<T> {
+impl<'de, T: Default + PrimInt + FromPrimitive + FromStr> de::Visitor<'de> for DeNumVisitor<T> {
     type Value = T;
 
     fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
@@ -22,14 +22,14 @@ impl<'de, T: Num> de::Visitor<'de> for DeNumVisitor<T> {
     where
         E: de::Error,
     {
-        Ok(Self::Value::from_i64(v))
+        Self::Value::from_i64(v).ok_or_else(|| E::invalid_value(de::Unexpected::Signed(v), &self))
     }
 
     fn visit_u64<E>(self, v: u64) -> Result<Self::Value, E>
     where
         E: de::Error,
     {
-        Ok(Self::Value::from_u64(v))
+        Self::Value::from_u64(v).ok_or_else(|| E::invalid_value(de::Unexpected::Unsigned(v), &self))
     }
 
     fn visit_str<E>(self, v: &str) -> Result<Self::Value, E>
@@ -46,7 +46,7 @@ impl<'de, T: Num> de::Visitor<'de> for DeNumVisitor<T> {
 pub fn de_x_num<'de, D, T>(deserializer: D) -> Result<T, D::Error>
 where
     D: de::Deserializer<'de>,
-    T: Num,
+    T: Default + PrimInt + FromPrimitive + FromStr,
 {
     deserializer.deserialize_any(DeNumVisitor::<T>::default())
 }
@@ -55,12 +55,12 @@ where
 
 #[cfg(feature = "num")]
 #[derive(Default)]
-struct DeFloatVisitor<T: Float> {
+struct DeFloatVisitor<T: Default + Float> {
     _phantom: std::marker::PhantomData<T>,
 }
 
 #[cfg(feature = "num")]
-impl<'de, T: Float> de::Visitor<'de> for DeFloatVisitor<T> {
+impl<'de, T: Default + Float + FromPrimitive + FromStr> de::Visitor<'de> for DeFloatVisitor<T> {
     type Value = T;
 
     fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
@@ -71,21 +71,21 @@ impl<'de, T: Float> de::Visitor<'de> for DeFloatVisitor<T> {
     where
         E: de::Error,
     {
-        Ok(Self::Value::from_f64(v))
+        Self::Value::from_f64(v).ok_or_else(|| E::invalid_value(de::Unexpected::Float(v), &self))
     }
 
     fn visit_i64<E>(self, v: i64) -> Result<Self::Value, E>
     where
         E: de::Error,
     {
-        Ok(Self::Value::from_i64(v))
+        Self::Value::from_i64(v).ok_or_else(|| E::invalid_value(de::Unexpected::Signed(v), &self))
     }
 
     fn visit_u64<E>(self, v: u64) -> Result<Self::Value, E>
     where
         E: de::Error,
     {
-        Ok(Self::Value::from_u64(v))
+        Self::Value::from_u64(v).ok_or_else(|| E::invalid_value(de::Unexpected::Unsigned(v), &self))
     }
 
     fn visit_str<E>(self, v: &str) -> Result<Self::Value, E>
@@ -102,7 +102,7 @@ impl<'de, T: Float> de::Visitor<'de> for DeFloatVisitor<T> {
 pub fn de_x_float<'de, D, T>(deserializer: D) -> Result<T, D::Error>
 where
     D: de::Deserializer<'de>,
-    T: Float,
+    T: Default + Float + FromPrimitive + FromStr,
 {
     deserializer.deserialize_any(DeFloatVisitor::<T>::default())
 }
@@ -193,7 +193,8 @@ impl<'de, T: From<Vec<u8>>> de::Visitor<'de> for DeBytesVisitor<T> {
     where
         E: de::Error,
     {
-        base64_standard.decode(v.as_bytes())
+        base64_standard
+            .decode(v.as_bytes())
             .map(|x| Some(x.into()))
             .map_err(|_| E::invalid_value(de::Unexpected::Str(v), &self))
     }

@@ -108,6 +108,7 @@ impl<T: AsRef<str>> StrRsx for T {
 
 #[cfg(test)]
 mod tests {
+    #[allow(unused_imports)]
     use super::*;
 
     #[cfg(feature = "regex")]

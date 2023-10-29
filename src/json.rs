@@ -1,9 +1,9 @@
 use crate::collections::Contains;
-#[cfg(feature = "num")]
-use crate::num::*;
 use ::serde::{de::DeserializeOwned, ser::Serialize};
 use ::serde_json::{json, map::Map, value::Index, Value as Json};
 use ::std::{borrow::Borrow, hash::Hash};
+#[cfg(feature = "num")]
+use num_traits::{AsPrimitive, Float, FromPrimitive, PrimInt};
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -26,10 +26,10 @@ impl<I: AsRef<str>> JsonIndexed<I> for Map<String, Json> {
     }
 }
 
-impl<I: Num + Index> JsonIndexed<I> for Vec<Json> {
+impl<I: PrimInt + AsPrimitive<usize> + Index> JsonIndexed<I> for Vec<Json> {
     #[inline(always)]
     fn get_member(&self, index: I) -> Option<&Json> {
-        self.get(index.as_usize())
+        self.get(index.as_())
     }
 }
 
@@ -88,41 +88,49 @@ pub trait JsonGetOr<'a, I, T, _T> {
 }
 
 #[cfg(feature = "num")]
-impl<I: Index, T: Num, V: JsonIndexed<I>> JsonGetOr<'_, I, T, i64> for V {
+impl<I, T, V> JsonGetOr<'_, I, T, i64> for V
+where
+    I: Index,
+    T: PrimInt + FromPrimitive,
+    V: JsonIndexed<I>,
+{
     #[inline]
     fn get_or(&self, index: I, default: T) -> T {
-        T::from_i64(
-            self.get_member(index)
-                .and_then(|x| x.as_i64())
-                .unwrap_or_else(|| default.as_i64()),
-        )
+        self.get_member(index)
+            .and_then(|x| x.as_i64())
+            .and_then(|x| T::from_i64(x))
+            .unwrap_or(default)
     }
 
     #[inline]
     fn get_or_else<F: FnOnce() -> T>(&self, index: I, f: F) -> T {
         self.get_member(index)
             .and_then(|x| x.as_i64())
-            .map(|x| T::from_i64(x))
+            .and_then(|x| T::from_i64(x))
             .unwrap_or_else(f)
     }
 }
 
 #[cfg(feature = "num")]
-impl<'a, I: Index, T: Float, V: JsonIndexed<I>> JsonGetOr<'a, I, T, f64> for V {
+impl<I, T, V> JsonGetOr<'_, I, T, f64> for V
+where
+    I: Index,
+    T: Float + FromPrimitive,
+    V: JsonIndexed<I>,
+{
     #[inline]
     fn get_or(&self, index: I, default: T) -> T {
-        T::from_f64(
-            self.get_member(index)
-                .and_then(|x| x.as_f64())
-                .unwrap_or_else(|| default.as_f64()),
-        )
+        self.get_member(index)
+            .and_then(|x| x.as_f64())
+            .and_then(|x| T::from_f64(x))
+            .unwrap_or(default)
     }
 
     #[inline]
     fn get_or_else<F: FnOnce() -> T>(&self, index: I, f: F) -> T {
         self.get_member(index)
             .and_then(|x| x.as_f64())
-            .map(|x| T::from_f64(x))
+            .and_then(|x| T::from_f64(x))
             .unwrap_or_else(f)
     }
 }
@@ -163,9 +171,8 @@ impl<I: Index, V: JsonIndexed<I>> JsonGetOr<'_, I, bool, bool> for V {
 
 /// Extension for serde_json::Value.
 pub trait JsonObjectRsx {
-    /// Simplify key-value insertion for a JSON object.
-    ///
-    /// Insert key-value into a json object with an index and a value.
+    /// Insert a key-value pair into a JSON object by specifying the key name
+    /// and the value to be assigned to it.
     ///
     /// # Arguments
     ///
@@ -187,13 +194,12 @@ pub trait JsonObjectRsx {
     /// ```
     fn insert_s<T: Serialize>(&mut self, k: &str, v: T) -> Option<Json>;
 
-    /// Take all fields with the prefix and insert into a new object.
-    ///
-    /// The prefix of fields name will be removed before insertion.
+    /// Collect all fields that have the specified prefix and insert them into
+    /// a new object, removing the prefix from the field names before insertion.
     ///
     fn take_with_prefix(&mut self, prefix: &str) -> Self;
 
-    /// Merge a JSON object to a serializable object.
+    /// Merge a JSON object to a serializable object, skip the fields with
     fn merge_to<T, S, K>(&self, dst: &mut T, skip: &S) -> serde_json::Result<()>
     where
         T: Serialize + DeserializeOwned,

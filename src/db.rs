@@ -729,8 +729,6 @@ pub struct SqlCache {
     map: PlRwLock<LinkedHashMap<String, Arc<SqlHelper>>>,
 }
 
-impl_default_by_new!(SqlCache);
-
 impl SqlCache {
     pub fn new() -> Self {
         Self {
