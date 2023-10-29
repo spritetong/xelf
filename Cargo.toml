@@ -1,7 +1,8 @@
 [package]
 name = "rsx"
-version = "0.3.6"
+version = "0.4.0"
 edition = "2021"
+rust-version = "1.60"
 
 [lib]
 name = "rsx"
@@ -9,42 +10,38 @@ path = "src/lib.rs"
 
 [features]
 default = ["minimal"]
-minimal = ["datetime", "collections", "derive", "io", "memoffset", "once-cell"]
-common = ["minimal", "async", "cfg-if", "fs", "hashmap", "net", "ouroboros", "ptr", "regex",
-          "str", "sync", "with-bytes", "with-hex", "with-log", "with-serde"]
-full = ["common", "db", "ffi", "signal"]
-
-with-bytes = ["bytes", "bytestring", "zerocopy"]
-with-hex = ["hex", "hex-literal"]
-with-log = ["log", "env-logger", "dotenv"]
-with-serde = ["bytestring-serde", "chrono-serde", "json", "num", "serde", "serde-repr"]
-with-rustls = ["rustls", "rustls-pemfile", "tokio-rustls"]
+minimal = ["datetime", "collections", "derive", "io", "memoffset", "once_cell"]
+common = ["minimal", "async", "bytes", "cfg-if", "fs", "hashmap", "hex", "log",
+          "net", "ouroboros", "ptr", "regex", "serde", "str", "sync", "signal"]
+full = ["common", "db", "ffi"]
 
 async = ["async-stream", "async-trait", "flume", "future", "futures", "futures-util",
-	"mio", "parking-lot", "pin-project", "tokio", "tokio-stream", "tokio-util"]
+	     "mio", "parking_lot", "pin-project", "tokio"]
+bytes = ["dep:bytes", "bytestring", "zerocopy"]
 collections = ["maplit", "smallvec", "vec"]
-datetime = ["chrono", "num", "chrono-serde"]
-db = ["async", "collections", "datetime", "hashmap", "minimal", "ouroboros", "regex",
-    "rust-decimal", "snowflake", "str", "sync", "sea-orm", "sqlx", "strum", "with-bytes",
-    "with-serde", "with-rustls"]
-derive = ["derive-more", "smart-default", "strum"]
+datetime = ["chrono", "num"]
+db = ["async", "bytes", "collections", "datetime", "hashmap", "minimal", "ouroboros", "regex",
+      "rust_decimal", "snowflake", "str", "sync", "sea-orm", "serde", "sqlx", "strum", "rustls"]
+derive = ["derive_more", "smart-default", "strum"]
 fs = ["io", "path-absolutize", "tempfile"]
 ffi = ["cfg-if", "hashlink", "sync"]
-future = ["futures", "futures-util", "pin-project"]
+future = ["futures", "futures-util", "pin-project", "tokio"]
 hashmap = ["ahash", "hashlink", "maplit"]
+hex = ["dep:hex", "hex-literal"]
 io = []
-json = ["base64", "serde", "serde-json", "num", "collections", "with-hex"]
+json = ["base64", "collections", "hex", "num", "dep:serde", "serde_json"]
+log = ["dep:log", "env_logger", "dotenv"]
 net = ["ipnetwork", "socket2", "url", "winapi"]
-num = []
-ptr = ["memoffset", "once-cell"]
+num = ["num-traits"]
+ptr = ["memoffset", "once_cell"]
+rustls = ["dep:rustls", "rustls-pemfile", "tokio-rustls"]
+serde = ["dep:serde", "bytestring/serde", "chrono/serde", "json", "num", "serde_repr"]
+signal = ["future", "tokio-stream/signal"]
 snowflake = ["smart-default"]
 str = ["ptr"]
-signal = ["futures", "tokio-stream"]
-sync = ["arc-swap", "crossbeam", "flume", "num-cpus", "parking-lot"]
+sync = ["arc-swap", "crossbeam", "flume", "num_cpus", "parking_lot"]
+tokio = ["dep:tokio", "tokio-stream", "tokio-util"]
 vec = []
-
-bytestring-serde = ["bytestring/serde", "serde"]
-chrono-serde = ["chrono/serde", "json", "serde"]
 
 [dependencies]
 ahash = { version = "0.8", optional = true }
@@ -58,13 +55,13 @@ bytestring = { version = "1", optional = true }
 
 chrono = { version = "0.4", optional = true }
 
-derive-more = { version = "0.99", package = "derive_more", optional = true }
+derive_more = { version = "0.99", optional = true }
 smart-default = { version = "0.7", optional = true }
 strum = { version = "0.25", features = ["derive"], optional = true }
 
 cfg-if = { version = "1", optional = true }
 dotenv = { version = "0.15", optional = true }
-env-logger = { version = "0.10", package = "env_logger", optional = true }
+env_logger = { version = "0.10", optional = true }
 log = { version = "0.4", optional = true }
 path-absolutize = { version = "3", optional = true }
 
@@ -77,7 +74,7 @@ pin-project = { version = "1", optional = true }
 tokio = { version = "1", features = ["full"], optional = true }
 tokio-rustls = { version = "0.24", optional = true }
 tokio-stream = { version = "0.1", features = [
-    "time", "sync", "signal", "net", "fs", "io-util"], optional = true }
+    "fs", "io-util", "net", "sync", "time"], optional = true }
 tokio-util = { version = "0.7", features = ["full"], optional = true }
 
 hex = { version = "0.4", optional = true }
@@ -87,19 +84,21 @@ ipnetwork = { version = "0.20", optional = true }
 socket2 = { version = "0.5", optional = true }
 url = { version = "2", optional = true }
 
-num-cpus = { version = "1", package = "num_cpus", optional = true }
+num-traits = { version = "0.2", optional = true }
+
+num_cpus = { version = "1", optional = true }
 memoffset = { version = "0.9", optional = true }
 zerocopy = { version = "0.7", features = ["derive"], optional = true }
 
-once-cell = { version = "1", package = "once_cell", optional = true }
+once_cell = { version = "1", optional = true }
 ouroboros = { version = "0.18", optional = true }
 
 regex = { version = "1", optional = true }
 
 base64 = { version = "0.21", optional = true }
 serde = { version = "1", features = ["derive"], optional = true }
-serde-json = { version = "1", package = "serde_json", optional = true }
-serde-repr = { version = "0.1", package = "serde_repr", optional = true }
+serde_json = { version = "1", optional = true }
+serde_repr = { version = "0.1", optional = true }
 
 tempfile = { version = "3", optional = true }
 
@@ -109,9 +108,9 @@ rustls-pemfile = { version = "1.0", optional = true }
 arc-swap = { version = "1", optional = true }
 crossbeam = { version = "0.8", optional = true }
 flume = { version = "0.11", optional = true }
-parking-lot = { version = "0.12", package = "parking_lot", optional = true }
+parking_lot = { version = "0.12", optional = true }
 
-rust-decimal = { version = "1", package = "rust_decimal", optional = true }
+rust_decimal = { version = "1", optional = true }
 sea-orm = { version = "0.12", features = [
     "sqlx-postgres", "sqlx-sqlite", "runtime-tokio-rustls", "runtime-tokio"
     ], optional = true }
