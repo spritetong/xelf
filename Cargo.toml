@@ -11,8 +11,8 @@ path = "src/lib.rs"
 [features]
 default = ["minimal"]
 minimal = ["datetime", "collections", "derive", "io", "memoffset", "once_cell"]
-common = ["minimal", "async", "bytes", "cfg-if", "fs", "hashmap", "hex", "log",
-          "net", "ouroboros", "ptr", "regex", "serde", "str", "sync", "signal"]
+common = ["minimal", "async", "bytes", "cfg-if", "fs", "json", "hashmap", "hex",
+          "log", "net", "ouroboros", "ptr", "regex", "serde", "str", "sync", "signal"]
 full = ["common", "db", "ffi"]
 
 async = ["async-stream", "async-trait", "flume", "future", "futures", "futures-util",
