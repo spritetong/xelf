@@ -1,4 +1,3 @@
-use base64::{engine::general_purpose::STANDARD as base64_standard, Engine as _};
 #[cfg(feature = "num")]
 use num_traits::{Float, FromPrimitive, PrimInt};
 use serde::{de, ser};
@@ -166,93 +165,6 @@ where
 
 ////////////////////////////////////////////////////////////////////////////////
 
-struct DeBytesVisitor<T: From<Vec<u8>>>(PhantomData<T>);
-
-impl<'de, T: From<Vec<u8>>> de::Visitor<'de> for DeBytesVisitor<T> {
-    type Value = Option<T>;
-
-    fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-        formatter.write_str("a BASE64 encoded string")
-    }
-
-    fn visit_none<E>(self) -> Result<Self::Value, E>
-    where
-        E: de::Error,
-    {
-        Ok(None)
-    }
-
-    fn visit_some<D>(self, deserializer: D) -> Result<Self::Value, D::Error>
-    where
-        D: de::Deserializer<'de>,
-    {
-        deserializer.deserialize_str(self)
-    }
-
-    fn visit_str<E>(self, v: &str) -> Result<Self::Value, E>
-    where
-        E: de::Error,
-    {
-        base64_standard
-            .decode(v.as_bytes())
-            .map(|x| Some(x.into()))
-            .map_err(|_| E::invalid_value(de::Unexpected::Str(v), &self))
-    }
-}
-
-/// Function to serializing a `&[u8]` slice to a BASE64 encoded string.
-pub fn ser_x_bytes<T, S>(this: T, serializer: S) -> Result<S::Ok, S::Error>
-where
-    T: AsRef<[u8]>,
-    S: ser::Serializer,
-{
-    serializer.serialize_str(&base64_standard.encode(this.as_ref()))
-}
-
-/// Function to deserializing a BASE64 encoded string to a `&[u8]` slice.
-pub fn de_x_bytes<'de, T, D>(deserializer: D) -> Result<T, D::Error>
-where
-    T: From<Vec<u8>>,
-    D: de::Deserializer<'de>,
-{
-    deserializer
-        .deserialize_str(DeBytesVisitor::<T>(PhantomData))
-        .map(|x| x.unwrap())
-}
-
-/// Function to serializing an optional `&[u8]` slice to an optional BASE64 encoded string.
-pub fn ser_x_optional_bytes<T, S>(this: &Option<T>, serializer: S) -> Result<S::Ok, S::Error>
-where
-    T: AsRef<[u8]>,
-    S: ser::Serializer,
-{
-    match this {
-        Some(x) => serializer.serialize_str(&base64_standard.encode(x.as_ref())),
-        None => serializer.serialize_none(),
-    }
-}
-
-/// Function to deserializing an optional BASE64 encoded string to a an optional `&[u8]` slice.
-pub fn de_x_optional_bytes<'de, T, D>(deserializer: D) -> Result<Option<T>, D::Error>
-where
-    T: From<Vec<u8>>,
-    D: de::Deserializer<'de>,
-{
-    deserializer.deserialize_option(DeBytesVisitor::<T>(PhantomData))
-}
-
-pub mod serde_x_bytes {
-    pub use super::de_x_bytes as deserialize;
-    pub use super::ser_x_bytes as serialize;
-}
-
-pub mod serde_x_optional_bytes {
-    pub use super::de_x_optional_bytes as deserialize;
-    pub use super::ser_x_optional_bytes as serialize;
-}
-
-////////////////////////////////////////////////////////////////////////////////
-
 struct DeStringsVisitor<T: FromStr>(PhantomData<T>);
 
 impl<'de, T: FromStr> de::Visitor<'de> for DeStringsVisitor<T> {
@@ -289,35 +201,6 @@ where
     deserializer.deserialize_str(DeStringsVisitor::<String>(PhantomData))
 }
 
-/// Function to serializing an object <T> to a simple string, the separator is ','
-///
-/// Usually type T is number.
-pub fn ser_x_vec<T, S>(this: &[T], serializer: S) -> Result<S::Ok, S::Error>
-where
-    T: ToString,
-    S: ser::Serializer,
-{
-    serializer.serialize_str(
-        this.iter()
-            .map(|x| x.to_string())
-            .collect::<Vec<String>>()
-            .join(", ")
-            .as_str(),
-    )
-}
-
-/// Function to deserializing a simple string to an object <T> a **`Vec<String>`**,
-/// the separator is ',', ';', or '\n'**`Vec<String>`**
-///
-/// Usually type T is number.
-pub fn de_x_vec<'de, D, T>(deserializer: D) -> Result<Vec<T>, D::Error>
-where
-    T: FromStr,
-    D: de::Deserializer<'de>,
-{
-    deserializer.deserialize_str(DeStringsVisitor::<T>(PhantomData))
-}
-
 /// Module to serialize and deserialize a **`Vec<String>`** to/from a simple string,
 /// the separator is ',', ';', or '\n'**`Vec<String>`**
 pub mod serde_x_strings {
@@ -325,33 +208,34 @@ pub mod serde_x_strings {
     pub use super::ser_x_strings as serialize;
 }
 
-/// Module to serialize and deserialize a **`Vec<T>`** to/from a simple string,
-/// the separator is ',', ';', or '\n'**`Vec<String>`**
-///
-/// Usually type T is number.
-pub mod serde_x_vec {
-    pub use super::de_x_vec as deserialize;
-    pub use super::ser_x_vec as serialize;
-}
-
 #[cfg(test)]
 mod tests {
-    use super::*;
-    use serde::{Deserialize, Serialize};
+    use crate::prelude::*;
 
-    #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
+    #[serde_as]
+    #[derive(Clone, Debug, Default, Serialize, Deserialize, PartialEq, Eq)]
     struct Person {
-        #[serde(with = "serde_x_bytes")]
+        #[serde_as(as = "Base64")]
         name: Vec<u8>,
-        #[serde(with = "serde_x_optional_bytes")]
+        #[serde_as(as = "Option<Base64>")]
         nickname: Option<Vec<u8>>,
+        #[serde_as(as = "StringWithSeparator::<SemicolonSeparator, String>")]
+        #[serde(skip_serializing_if = "Vec::is_empty", default)]
+        strings: Vec<String>,
     }
 
+    serde_with::with_prefix!(prefix_player1 "player1_");
+
+    #[serde_as]
+    #[derive(Deserialize, Serialize)]
+    struct Data(#[serde_as(as = "serde_with::BoolFromInt")] bool);
+    
     #[test]
     fn test_serde() {
-        let mut a = Person {
+        let mut a: Person = Person {
             name: vec![1],
             nickname: Some(vec![2]),
+            ..Default::default()
         };
         let s = serde_json::to_string(&a).unwrap();
         println!("{}", &s);

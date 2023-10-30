@@ -29,13 +29,14 @@ future = ["futures", "futures-util", "pin-project", "tokio"]
 hashmap = ["ahash", "hashlink", "maplit"]
 hex = ["dep:hex", "hex-literal"]
 io = []
-json = ["base64", "collections", "hex", "num", "dep:serde", "serde_json"]
+json = ["serde"]
 log = ["dep:log", "env_logger", "dotenv"]
 net = ["ipnetwork", "socket2", "url", "winapi"]
 num = ["num-traits"]
 ptr = ["memoffset", "once_cell"]
 rustls = ["dep:rustls", "rustls-pemfile", "tokio-rustls"]
-serde = ["dep:serde", "bytestring/serde", "chrono/serde", "json", "num", "serde_repr"]
+serde = ["dep:serde", "base64", "bytestring/serde", "chrono/serde", "collections",
+         "hex", "serde_json", "num", "serde_repr", "serde_with"]
 signal = ["future", "tokio-stream/signal"]
 snowflake = ["smart-default"]
 str = ["ptr"]
@@ -99,6 +100,7 @@ base64 = { version = "0.21", optional = true }
 serde = { version = "1", features = ["derive"], optional = true }
 serde_json = { version = "1", optional = true }
 serde_repr = { version = "0.1", optional = true }
+serde_with = { version = "3", features = ["base64"], optional = true }
 
 tempfile = { version = "3", optional = true }
 

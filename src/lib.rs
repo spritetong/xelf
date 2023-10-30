@@ -253,6 +253,10 @@ pub mod prelude {
     pub type JsonMap = ::serde_json::Map<String, Json>;
     #[cfg(feature = "serde_repr")]
     pub use ::serde_repr::{self, Deserialize_repr, Serialize_repr};
+    #[cfg(feature = "serde_with")]
+    pub use ::serde_with::{
+        self, base64::Base64, formats::SemicolonSeparator, serde_as, StringWithSeparator,
+    };
 
     #[cfg(feature = "tempfile")]
     pub use ::tempfile::{self, NamedTempFile, TempDir, TempPath};
