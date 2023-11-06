@@ -1,70 +1,90 @@
-use std::{io, ptr::NonNull, slice};
+#![allow(clippy::missing_safety_doc)]
 
-trait RawPtrOps: Sized {
+use std::{ptr::NonNull, slice};
+
+pub trait RawPtrOps: Sized {
+    #[must_use]
     #[inline(always)]
     fn as_ptr(&self) -> *const Self {
         self as *const _
     }
 
+    #[must_use]
     #[inline(always)]
     fn as_mut_ptr(&mut self) -> *mut Self {
         self as *mut _
     }
 
+    #[must_use]
     #[inline(always)]
     unsafe fn iadd(&self, count: isize) -> &'static Self {
         &*(self as *const Self).wrapping_offset(count)
     }
 
+    #[must_use]
     #[inline(always)]
     unsafe fn iadd_mut(&mut self, count: isize) -> &'static mut Self {
         &mut *(self as *mut Self).wrapping_offset(count)
     }
 
+    #[must_use]
     #[inline(always)]
     unsafe fn uadd(&self, count: usize) -> &'static Self {
         &*(self as *const Self).wrapping_add(count)
     }
 
+    #[must_use]
     #[inline(always)]
     unsafe fn uadd_mut(&mut self, count: usize) -> &'static mut Self {
         &mut *(self as *mut Self).wrapping_add(count)
     }
 
+    #[must_use]
     #[inline(always)]
     fn idiff(&self, rhs: *const Self) -> isize {
         ((self as *const _ as isize) - (rhs as isize)) / std::mem::size_of::<Self>() as isize
     }
 
+    #[must_use]
     #[inline(always)]
     fn udiff(&self, rhs: *const Self) -> usize {
         ((self as *const _ as usize) - (rhs as usize)) / std::mem::size_of::<Self>()
     }
 
+    #[must_use]
     #[inline(always)]
     unsafe fn slice(&self, len: usize) -> &'static [Self] {
         slice::from_raw_parts(self, len)
     }
 
+    #[must_use]
     #[inline(always)]
     unsafe fn slice_mut(&mut self, len: usize) -> &'static mut [Self] {
         slice::from_raw_parts_mut(self, len)
     }
 }
 
-trait SlicePtrOps {
+pub trait SlicePtrOps {
     type Item: Sized;
 
+    #[must_use]
     unsafe fn begin(&self) -> &'static Self::Item;
+    #[must_use]
     unsafe fn begin_mut(&mut self) -> &'static mut Self::Item;
 
+    #[must_use]
     unsafe fn end(&self) -> &'static Self::Item;
+    #[must_use]
     unsafe fn end_mut(&mut self) -> &'static mut Self::Item;
 
+    #[must_use]
     unsafe fn slice_unchecked_at(&self, at: usize) -> &[Self::Item];
+    #[must_use]
     unsafe fn slice_unchecked_at_mut(&mut self, at: usize) -> &mut [Self::Item];
 
+    #[must_use]
     fn slice_at(&self, at: usize) -> &[Self::Item];
+    #[must_use]
     fn slice_at_mut(&mut self, at: usize) -> &mut [Self::Item];
 }
 

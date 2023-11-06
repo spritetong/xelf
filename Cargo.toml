@@ -9,7 +9,7 @@ name = "rsx"
 path = "src/lib.rs"
 
 [features]
-default = ["minimal"]
+default = ["full"]
 minimal = ["datetime", "collections", "derive", "io", "memoffset", "once_cell"]
 common = ["minimal", "async", "bytes", "cfg-if", "fs", "json", "hashmap", "hex",
           "log", "net", "ouroboros", "ptr", "regex", "serde", "str", "sync", "signal"]
