@@ -5,13 +5,13 @@ use std::{ptr::NonNull, slice};
 pub trait RawPtrOps: Sized {
     #[must_use]
     #[inline(always)]
-    fn as_ptr(&self) -> *const Self {
+    fn raw_ptr(&self) -> *const Self {
         self as *const _
     }
 
     #[must_use]
     #[inline(always)]
-    fn as_mut_ptr(&mut self) -> *mut Self {
+    fn raw_mut(&mut self) -> *mut Self {
         self as *mut _
     }
 
@@ -88,9 +88,9 @@ pub trait SlicePtrOps {
     fn slice_at_mut(&mut self, at: usize) -> &mut [Self::Item];
 }
 
-impl<T: 'static + Sized> RawPtrOps for T {}
+impl<T: 'static + Copy + Sized> RawPtrOps for T {}
 
-impl<T: 'static + Sized> SlicePtrOps for [T] {
+impl<T: 'static + Copy + Sized> SlicePtrOps for [T] {
     type Item = T;
 
     #[inline(always)]
@@ -143,5 +143,30 @@ impl<T: 'static + Sized> SlicePtrOps for [T] {
                 self.begin_mut().uadd_mut(at).slice_mut(self.len() - at)
             }
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[derive(Clone, Copy)]
+    struct Foo {
+        a: i32,
+        b: *const i32,
+        c: *mut i32,
+    }
+
+    #[test]
+    fn test_raw_ptr() {
+        let a = Foo {
+            a: 1,
+            b: std::ptr::null(),
+            c: std::ptr::null_mut(),
+        };
+        assert_eq!(a.idiff(&a), 0);
+        assert_eq!(a.a.idiff(&a.a), 0);
+        assert_eq!(a.b.idiff(&a.b), 0);
+        assert_eq!(a.c.idiff(&a.c), 0);
     }
 }
