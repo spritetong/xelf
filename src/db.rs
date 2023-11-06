@@ -729,13 +729,15 @@ pub struct SqlCache {
     map: PlRwLock<LinkedHashMap<String, Arc<SqlHelper>>>,
 }
 
-impl SqlCache {
-    pub fn new() -> Self {
+impl Default for SqlCache {
+    fn default() -> Self {
         Self {
             map: PlRwLock::new(LinkedHashMap::new()),
         }
     }
+}
 
+impl SqlCache {
     pub fn get<N, F>(&self, name: N, db_backend: DbBackend, maker: F) -> SqlHelper
     where
         N: AsRef<str>,
@@ -1073,7 +1075,7 @@ mod tests {
             "SELECT 'a' '?' 'b'"
         );
 
-        let cache = SqlCache::new();
+        let cache = SqlCache::default();
         for _ in 0..10 {
             let mut q = cache.get("SQL1", DbBackend::Postgres, |be| {
                 let mut w = RawSqlBuilder::new(be);
