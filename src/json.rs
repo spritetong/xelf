@@ -1,7 +1,7 @@
 use crate::collections::Contains;
 use ::serde::{de::DeserializeOwned, ser::Serialize};
-use ::serde_json::{json, map::Map, value::Index, Value as Json};
-use ::std::{borrow::Borrow, hash::Hash};
+use ::serde_json::{json, map::Map, value::Index, Number, Value as Json};
+use ::std::{borrow::Borrow, hash::Hash, str::FromStr};
 #[cfg(feature = "num")]
 use num_traits::{AsPrimitive, Float, FromPrimitive, PrimInt};
 
@@ -199,12 +199,23 @@ pub trait JsonObjectRsx {
     ///
     fn take_with_prefix(&mut self, prefix: &str) -> Self;
 
-    /// Merge a JSON object to a serializable object, skip the fields with
+    /// Merge this JSON object to a serializable object, skip the fields in `skip`.
     fn merge_to<T, S, K>(&self, dst: &mut T, skip: &S) -> serde_json::Result<()>
     where
         T: Serialize + DeserializeOwned,
         S: ?Sized + Contains<K, str>,
         K: Hash + Ord + Eq + Borrow<str>;
+
+    /// Recursively update all fields of this JSON object with another JSON object.
+    ///
+    /// # Arguments
+    ///
+    /// * `source`: the source JSON object.
+    /// * `allow_null`:  If set to `true`, the function allows updating target fields
+    ///                  with null values from the source object.
+    ///                  If set to `false`, it ignores null values from the source object.
+    ///
+    fn deep_update_with(&mut self, source: Json, allow_null: bool);
 }
 
 impl JsonObjectRsx for Json {
@@ -231,6 +242,57 @@ impl JsonObjectRsx for Json {
             map.merge_to(dst, skip)
         } else {
             Ok(())
+        }
+    }
+
+    fn deep_update_with(&mut self, source: Json, allow_null: bool) {
+        match self {
+            Json::Null => *self = source,
+            Json::Bool(_) => match source {
+                Json::Bool(x) => *self = Json::Bool(x),
+                Json::Number(x) => {
+                    if let Some(n) = x.as_i64() {
+                        *self = Json::Bool(n != 0);
+                    }
+                }
+                Json::String(x) => {
+                    if let Ok(x) = x.parse::<bool>() {
+                        *self = Json::Bool(x);
+                    }
+                }
+                Json::Null if allow_null => *self = source,
+                _ => (),
+            },
+            Json::Number(_) => match source {
+                Json::Bool(x) => *self = Json::Number((x as i64).into()),
+                Json::Number(x) => *self = Json::Number(x),
+                Json::String(x) => {
+                    if let Ok(x) = Number::from_str(&x) {
+                        *self = Json::Number(x);
+                    }
+                }
+                Json::Null if allow_null => *self = source,
+                _ => (),
+            },
+            Json::String(_) => match source {
+                Json::Bool(x) => *self = Json::String(x.to_string()),
+                Json::Number(x) => *self = Json::String(x.to_string()),
+                Json::String(x) => *self = Json::String(x),
+                Json::Null if allow_null => *self = source,
+                _ => (),
+            },
+            Json::Array(array) => match source {
+                Json::Array(x) => *array = x,
+                Json::String(x) => {
+                    if let Ok(x) = serde_json::from_str(&x) {
+                        *array = x;
+                    }
+                }
+                _ => (),
+            },
+            Json::Object(map) => {
+                map.deep_update_with(source, allow_null);
+            }
         }
     }
 }
@@ -269,6 +331,22 @@ impl JsonObjectRsx for Map<String, Json> {
         }
         T::deserialize_in_place(value, dst)?;
         Ok(())
+    }
+
+    fn deep_update_with(&mut self, source: Json, allow_null: bool) {
+        let mut source = match source {
+            Json::Object(x) => x,
+            Json::String(x) => match serde_json::from_str(&x) {
+                Ok(x) => x,
+                _ => return,
+            },
+            _ => return,
+        };
+        for (k, v) in self.iter_mut() {
+            if let Some(x) = source.remove(k) {
+                v.deep_update_with(x, allow_null);
+            }
+        }
     }
 }
 
