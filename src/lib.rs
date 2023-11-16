@@ -24,10 +24,7 @@ pub mod str;
 pub mod vec;
 
 pub mod prelude {
-    pub use crate::{
-        ok, ok_or, ok_or_break, ok_or_continue, ok_or_return, some_or, some_or_break,
-        some_or_continue, some_or_return, uninit_assume_init, zeroed_init, If,
-    };
+    pub use crate::{ok, If};
 
     #[cfg(feature = "future")]
     pub use ::std::{future::Future, marker::PhantomPinned, pin::Pin};
@@ -36,7 +33,7 @@ pub mod prelude {
     pub use ::std::time::{self, Duration, Instant, SystemTime, UNIX_EPOCH};
 
     #[cfg(feature = "ffi")]
-    pub use crate::{cstr, ffi::*};
+    pub use crate::{cstr, ffi::*, uninit_assume_init, zeroed_init};
     #[cfg(feature = "ffi")]
     pub use ::std::ffi::{self, CStr, CString};
 
@@ -284,39 +281,6 @@ pub mod prelude {
     pub use ::zerocopy::{self, AsBytes, FromBytes, FromZeroes};
 }
 
-/// Create an object and fill its memory with zero.
-#[macro_export]
-macro_rules! zeroed_init {
-    () => (
-        unsafe {
-            #[allow(invalid_value)]
-            ::std::mem::MaybeUninit::zeroed().assume_init()
-        }
-    );
-
-    ($x:ident $(,$field:ident: $value:expr)* $(,)?) => (
-        unsafe {
-            $x = {
-                #[allow(invalid_value)]
-                ::std::mem::MaybeUninit::zeroed().assume_init()
-            };
-            $(std::ptr::write(&mut $x.$field, $value);)*
-        }
-    );
-}
-
-/// Create an object and do not initialize its memory.
-/// Usually used to create an binary array.
-#[macro_export]
-macro_rules! uninit_assume_init {
-    ($(,)?) => {
-        unsafe {
-            #[allow(invalid_value)]
-            ::std::mem::MaybeUninit::uninit().assume_init()
-        }
-    };
-}
-
 /// Simplify an "if" expression
 ///
 /// # Examples
@@ -338,7 +302,7 @@ macro_rules! If {
     };
 }
 
-/// Ignore an Result<T, E> value, do nothing for error.
+/// Ignore a `Result<T, E>` value, do nothing even if it's an error.
 #[macro_export]
 macro_rules! ok {
     ($expr:expr $(,)?) => {
@@ -351,91 +315,5 @@ macro_rules! ok {
         match $expr {
             _ => $value,
         }
-    };
-}
-
-/// Unwrap an Result<T, E> value, execute an expression on error.
-#[macro_export]
-macro_rules! ok_or {
-    ($expr:expr, $expr_on_err:expr $(,)?) => {
-        match $expr {
-            Ok(v) => v,
-            _ => $expr_on_err,
-        }
-    };
-}
-
-/// Unwrap an Result<T, E> value, return from the current function with a result on error.
-#[macro_export]
-macro_rules! ok_or_return {
-    ($expr:expr $(,)?) => {
-        ok_or!($expr, return)
-    };
-
-    ($expr:expr, $value:expr $(,)?) => {
-        ok_or!($expr, return $value)
-    };
-}
-
-/// Unwrap an Result<T, E> value, break the current loop with a value on error.
-#[macro_export]
-macro_rules! ok_or_break {
-    ($expr:expr $(,)?) => {
-        ok_or!($expr, break)
-    };
-
-    ($expr:expr, $value:expr $(,)?) => {
-        ok_or!($expr, break $value)
-    };
-}
-
-/// Unwrap an Result<T, E> value, continue the current loop on error.
-#[macro_export]
-macro_rules! ok_or_continue {
-    ($expr:expr $(,)?) => {
-        ok_or!($expr, continue)
-    };
-}
-
-/// Unwrap an Option<T> value, execute an expression on None.
-#[macro_export]
-macro_rules! some_or {
-    ($expr:expr, $expr_on_err:expr $(,)?) => {
-        match $expr {
-            Some(v) => v,
-            _ => $expr_on_err,
-        }
-    };
-}
-
-/// Unwrap an Option<T> value, return from the current function with on None.
-#[macro_export]
-macro_rules! some_or_return {
-    ($expr:expr $(,)?) => {
-        some_or!($expr, return)
-    };
-
-    ($expr:expr, $value:expr $(,)?) => {
-        some_or!($expr, return $value)
-    };
-}
-
-/// Unwrap an Option<T> value, break the current loop with a value on None.
-#[macro_export]
-macro_rules! some_or_break {
-    ($expr:expr $(,)?) => {
-        some_or!($expr, break)
-    };
-
-    ($expr:expr, $value:expr $(,)?) => {
-        some_or!($expr, break $value)
-    };
-}
-
-/// Unwrap an Option<T> value, continue the current loop on None.
-#[macro_export]
-macro_rules! some_or_continue {
-    ($expr:expr $(,)?) => {
-        some_or!($expr, continue)
     };
 }

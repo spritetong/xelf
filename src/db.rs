@@ -56,10 +56,9 @@ macro_rules! impl_merge_from {
             S: ?Sized + Contains<C, str>,
             C: Eq + Ord + Hash + Borrow<str>,
         {
-            let map = some_or_return!(
-                jsn.as_object(),
-                Err(DbErr::Type("Invalid JSON object".to_owned()))
-            );
+            let Some(map) = jsn.as_object() else {
+                return Err(DbErr::Type("Invalid JSON object".to_owned()));
+            };
 
             // Mark down which attribute exists in the JSON object
             let json_keys: Vec<<$M::Entity as EntityTrait>::Column> =

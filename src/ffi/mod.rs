@@ -24,3 +24,36 @@ macro_rules! cstr {
         unsafe { ::std::mem::transmute::<_, &::std::ffi::CStr>(concat!($s, "\0")) }
     };
 }
+
+/// Create an object and fill its memory with zero.
+#[macro_export]
+macro_rules! zeroed_init {
+    () => (
+        unsafe {
+            #[allow(invalid_value)]
+            ::std::mem::MaybeUninit::zeroed().assume_init()
+        }
+    );
+
+    ($x:ident $(,$field:ident: $value:expr)* $(,)?) => (
+        unsafe {
+            $x = {
+                #[allow(invalid_value)]
+                ::std::mem::MaybeUninit::zeroed().assume_init()
+            };
+            $(std::ptr::write(&mut $x.$field, $value);)*
+        }
+    );
+}
+
+/// Create an object and do not initialize its memory.
+/// Usually used to create an binary array.
+#[macro_export]
+macro_rules! uninit_assume_init {
+    ($(,)?) => {
+        unsafe {
+            #[allow(invalid_value)]
+            ::std::mem::MaybeUninit::uninit().assume_init()
+        }
+    };
+}
