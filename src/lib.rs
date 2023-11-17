@@ -87,7 +87,7 @@ pub mod prelude {
     pub use ::std::{
         borrow::{self, Borrow, BorrowMut, Cow},
         cell::{self, Cell, RefCell},
-        cmp::{max, min},
+        cmp::{max, min, Ordering::*},
         convert::{self, AsMut, AsRef, From, Infallible, Into, TryFrom, TryInto},
         env,
         fmt::{self, Display, Write as FmtWrite},

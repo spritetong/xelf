@@ -1,6 +1,6 @@
 [package]
 name = "rsx"
-version = "0.4.2"
+version = "0.4.3"
 edition = "2021"
 rust-version = "1.60"
 
@@ -24,7 +24,7 @@ db = ["async", "bytes", "collections", "datetime", "hashmap", "minimal", "ourobo
       "rust_decimal", "snowflake", "str", "sync", "sea-orm", "serde", "sqlx", "strum", "rustls"]
 derive = ["derive_more", "smart-default", "strum"]
 fs = ["io", "path-absolutize", "tempfile"]
-ffi = ["cfg-if", "hashlink", "sync"]
+ffi = ["cfg-if", "hashlink", "str", "sync", "zerocopy"]
 future = ["futures", "futures-util", "pin-project", "tokio"]
 hashmap = ["ahash", "hashlink", "maplit"]
 hex = ["dep:hex", "hex-literal"]
