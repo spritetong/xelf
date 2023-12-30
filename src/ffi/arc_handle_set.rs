@@ -124,8 +124,9 @@ impl Drop for ArcHandleSet {
     }
 }
 
+#[cfg(test)]
 mod tests {
-    pub use super::*;
+    use super::*;
 
     #[test]
     fn test_arc_handle_set() {

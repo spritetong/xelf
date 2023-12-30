@@ -164,8 +164,9 @@ mod tokio_scope {
     }
 }
 
+#[cfg(test)]
 mod tests {
-    pub use super::*;
+    use super::*;
 
     #[test]
     fn test_parker_cache() {
