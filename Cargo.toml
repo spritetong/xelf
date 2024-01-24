@@ -48,7 +48,7 @@ vec = []
 ahash = { version = "0.8", optional = true }
 maplit = { version = "1", optional = true }
 ritelinked = { version = "0.3", optional = true }
-hashlink = { version = "0.8", optional = true }
+hashlink = { version = "0.9", optional = true }
 smallvec = { version = "1", optional = true }
 
 bytes = { version = "1", optional = true }
