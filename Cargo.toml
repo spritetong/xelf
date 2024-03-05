@@ -58,7 +58,8 @@ chrono = { version = "0.4", optional = true }
 
 derive_more = { version = "0.99", optional = true }
 smart-default = { version = "0.7", optional = true }
-strum = { version = "0.25", features = ["derive"], optional = true }
+# FIXME: Remove the pinned version once sea-orm upgrades strum to 0.26+.
+strum = { version = "=0.25.0", features = ["derive"], optional = true }
 
 cfg-if = { version = "1", optional = true }
 dotenv = { version = "0.15", optional = true }
@@ -73,7 +74,7 @@ futures-util = { version = "0.3", optional = true }
 mio = { version = "0.8", optional = true }
 pin-project = { version = "1", optional = true }
 tokio = { version = "1", features = ["full"], optional = true }
-tokio-rustls = { version = "0.24", optional = true }
+tokio-rustls = { version = "0.25", optional = true }
 tokio-stream = { version = "0.1", features = [
     "fs", "io-util", "net", "sync", "time"], optional = true }
 tokio-util = { version = "0.7", features = ["full"], optional = true }
@@ -96,7 +97,7 @@ ouroboros = { version = "0.18", optional = true }
 
 regex = { version = "1", optional = true }
 
-base64 = { version = "0.21", optional = true }
+base64 = { version = "0.22", optional = true }
 serde = { version = "1", features = ["derive"], optional = true }
 serde_json = { version = "1", optional = true }
 serde_repr = { version = "0.1", optional = true }
@@ -104,8 +105,8 @@ serde_with = { version = "3", features = ["base64"], optional = true }
 
 tempfile = { version = "3", optional = true }
 
-rustls = { version = "0.21", features = ["dangerous_configuration"], optional = true }
-rustls-pemfile = { version = "2.0", optional = true }
+rustls = { version = "0.23", optional = true }
+rustls-pemfile = { version = "2.1", optional = true }
 
 arc-swap = { version = "1", optional = true }
 crossbeam = { version = "0.8", optional = true }
