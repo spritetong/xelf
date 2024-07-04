@@ -1,6 +1,6 @@
 [package]
 name = "rsx"
-version = "0.4.3"
+version = "0.4.4"
 edition = "2021"
 rust-version = "1.60"
 
@@ -10,7 +10,7 @@ path = "src/lib.rs"
 
 [features]
 default = ["minimal"]
-minimal = ["datetime", "collections", "derive", "io", "memoffset", "once_cell"]
+minimal = ["datetime", "collections", "derive", "io", "once_cell"]
 common = [
     "minimal",
     "async",
@@ -77,7 +77,7 @@ json = ["serde"]
 log = ["dep:log", "env_logger", "dotenv"]
 net = ["ipnetwork", "socket2", "url", "winapi"]
 num = ["num-traits"]
-ptr = ["memoffset", "once_cell"]
+ptr = ["once_cell"]
 rustls = ["dep:rustls", "rustls-pemfile", "tokio-rustls"]
 serde = [
     "dep:serde",
@@ -112,8 +112,7 @@ chrono = { version = "0.4", optional = true }
 
 derive_more = { version = "0.99", optional = true }
 smart-default = { version = "0.7", optional = true }
-# FIXME: Remove the pinned version once sea-orm upgrades strum to 0.26+.
-strum = { version = "=0.25.0", features = ["derive"], optional = true }
+strum = { version = "0.26", features = ["derive"], optional = true }
 
 cfg-if = { version = "1", optional = true }
 dotenv = { version = "0.15", optional = true }
@@ -125,10 +124,10 @@ async-stream = { version = "0.3", optional = true }
 async-trait = { version = "0.1", optional = true }
 futures = { version = "0.3", optional = true }
 futures-util = { version = "0.3", optional = true }
-mio = { version = "0.8", optional = true }
+mio = { version = "1", optional = true }
 pin-project = { version = "1", optional = true }
 tokio = { version = "1", features = ["full"], optional = true }
-tokio-rustls = { version = "0.24", optional = true }
+tokio-rustls = { version = "0.26", optional = true }
 tokio-stream = { version = "0.1", features = [
     "fs",
     "io-util",
@@ -148,7 +147,6 @@ url = { version = "2", optional = true }
 num-traits = { version = "0.2", optional = true }
 
 num_cpus = { version = "1", optional = true }
-memoffset = { version = "0.9", optional = true }
 zerocopy = { version = "0.7", features = ["derive"], optional = true }
 
 once_cell = { version = "1", optional = true }
@@ -164,9 +162,7 @@ serde_with = { version = "3", features = ["base64"], optional = true }
 
 tempfile = { version = "3", optional = true }
 
-rustls = { version = "0.21", features = [
-    "dangerous_configuration",
-], optional = true }
+rustls = { version = "0.23", optional = true }
 rustls-pemfile = { version = "2.1", optional = true }
 
 arc-swap = { version = "1", optional = true }
@@ -175,7 +171,7 @@ flume = { version = "0.11", optional = true }
 parking_lot = { version = "0.12", optional = true }
 
 rust_decimal = { version = "1", optional = true }
-sea-orm = { version = "0.12", features = [
+sea-orm = { version = "1.0.0-rc.7", features = [
     "sqlx-postgres",
     "sqlx-sqlite",
     "runtime-tokio-rustls",

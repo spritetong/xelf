@@ -183,9 +183,6 @@ pub mod prelude {
     #[cfg(feature = "num_cpus")]
     pub use ::num_cpus;
 
-    #[cfg(feature = "memoffset")]
-    pub use ::memoffset::{self, offset_of};
-
     #[cfg(feature = "maplit")]
     pub use ::maplit::{self, btreemap, btreeset, hashmap, hashset};
 

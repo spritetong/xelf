@@ -1,4 +1,5 @@
 #![allow(ambiguous_glob_reexports)]
+#![allow(clippy::missing_transmute_annotations)]
 
 use crate::prelude::*;
 pub use sea_orm::{
