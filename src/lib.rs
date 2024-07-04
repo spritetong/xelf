@@ -79,7 +79,10 @@ pub mod prelude {
     pub use crate::str::*;
 
     #[cfg(feature = "ptr")]
-    pub use ::std::{mem, ptr};
+    pub use ::std::{
+        mem::{self, offset_of},
+        ptr,
+    };
 
     #[cfg(feature = "vec")]
     pub use crate::vec::*;
