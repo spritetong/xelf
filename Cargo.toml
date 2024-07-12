@@ -1,8 +1,8 @@
 [package]
 name = "rsx"
-version = "0.4.4"
+version = "0.4.5"
 edition = "2021"
-rust-version = "1.60"
+rust-version = "1.77"
 
 [lib]
 name = "rsx"
