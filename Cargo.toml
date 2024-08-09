@@ -110,7 +110,12 @@ bytestring = { version = "1", optional = true }
 
 chrono = { version = "0.4", optional = true }
 
-derive_more = { version = "0.99", optional = true }
+derive_more = { version = "1.0", features = [
+    "as_ref",
+    "deref",
+    "deref_mut",
+    "display",
+], optional = true }
 smart-default = { version = "0.7", optional = true }
 strum = { version = "0.26", features = ["derive"], optional = true }
 

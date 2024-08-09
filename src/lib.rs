@@ -141,7 +141,10 @@ pub mod prelude {
     };
 
     #[cfg(feature = "derive_more")]
-    pub use ::derive_more::{self, AsMut, AsRef, Deref, DerefMut, Display};
+    pub use ::derive_more::{
+        self,
+        derive::{AsMut, AsRef, Deref, DerefMut, Display},
+    };
 
     #[cfg(feature = "dotenv")]
     pub use ::dotenv;
