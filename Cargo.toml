@@ -78,7 +78,7 @@ log = ["dep:log", "env_logger", "dotenv"]
 net = ["ipnetwork", "socket2", "url", "winapi"]
 num = ["num-traits"]
 ptr = ["once_cell"]
-rustls = ["dep:rustls", "rustls-pemfile", "tokio-rustls"]
+rustls = ["dep:aws-lc-rs", "dep:rustls", "rustls-pemfile", "tokio-rustls"]
 serde = [
     "dep:serde",
     "base64",
@@ -167,6 +167,7 @@ serde_with = { version = "3", features = ["base64"], optional = true }
 
 tempfile = { version = "3", optional = true }
 
+aws-lc-rs = { version = "1", features = ["bindgen"], optional = true }
 rustls = { version = "0.23", optional = true }
 rustls-pemfile = { version = "2.1", optional = true }
 
