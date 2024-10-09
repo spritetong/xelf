@@ -179,7 +179,7 @@ impl<'de, T: FromStr> de::Visitor<'de> for DeStringsVisitor<T> {
     where
         E: de::Error,
     {
-        Ok(v.split(|x| x == ',' || x == ';' || x == '\n')
+        Ok(v.split(|x| [',', ';', '\n'].contains(&x))
             .filter_map(|x| x.trim().parse::<T>().ok())
             .collect())
     }
@@ -230,7 +230,7 @@ mod tests {
     #[serde_as]
     #[derive(Deserialize, Serialize)]
     struct Data(#[serde_as(as = "serde_with::BoolFromInt")] bool);
-    
+
     #[test]
     fn test_serde() {
         let mut a: Person = Person {
