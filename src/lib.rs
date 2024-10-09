@@ -281,7 +281,7 @@ pub mod prelude {
     pub use ::url::{self, Url};
 
     #[cfg(feature = "zerocopy")]
-    pub use ::zerocopy::{self, AsBytes, FromBytes, FromZeroes};
+    pub use ::zerocopy::{self, FromBytes, FromZeros, IntoBytes};
 }
 
 /// Simplify an "if" expression

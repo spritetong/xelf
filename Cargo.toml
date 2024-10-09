@@ -152,7 +152,7 @@ url = { version = "2", optional = true }
 num-traits = { version = "0.2", optional = true }
 
 num_cpus = { version = "1", optional = true }
-zerocopy = { version = "0.7", features = ["derive"], optional = true }
+zerocopy = { version = "0.8", features = ["derive"], optional = true }
 
 once_cell = { version = "1", optional = true }
 ouroboros = { version = "0.18", optional = true }
@@ -169,7 +169,7 @@ tempfile = { version = "3", optional = true }
 
 aws-lc-rs = { version = "1", features = ["bindgen"], optional = true }
 rustls = { version = "0.23", optional = true }
-rustls-pemfile = { version = "2.1", optional = true }
+rustls-pemfile = { version = "2.2", optional = true }
 
 arc-swap = { version = "1", optional = true }
 crossbeam = { version = "0.8", optional = true }
