@@ -35,6 +35,7 @@ full = ["common", "db", "ffi"]
 async = [
     "async-stream",
     "async-trait",
+    "esvc",
     "flume",
     "future",
     "futures",
@@ -42,7 +43,6 @@ async = [
     "mio",
     "parking_lot",
     "pin-project",
-    "service",
     "tokio",
 ]
 bytes = ["dep:bytes", "bytestring", "zerocopy"]
@@ -68,6 +68,7 @@ db = [
     "sqlx",
 ]
 derive = ["derive_more", "smart-default", "strum"]
+esvc = ["tokio"]
 fs = ["io", "path-absolutize", "tempfile"]
 ffi = ["cfg-if", "hashlink", "str", "sync", "zerocopy"]
 future = ["futures", "futures-util", "pin-project", "tokio"]
@@ -92,7 +93,6 @@ serde = [
     "serde_repr",
     "serde_with",
 ]
-service = ["tokio"]
 signal = ["future", "tokio-stream/signal"]
 snowflake = ["smart-default"]
 str = ["ptr"]

@@ -1,6 +1,7 @@
 use ::std::{future::Future, io, pin::Pin, time::Duration};
 use ::tokio_util::sync::CancellationToken;
 
+pub use crate::easy_service;
 pub use ::tokio::sync::mpsc as svc_channel;
 pub type SvcSender<T> = svc_channel::Sender<T>;
 pub type SvcReceiver<T> = svc_channel::Receiver<T>;
