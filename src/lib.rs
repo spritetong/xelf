@@ -16,6 +16,8 @@ pub mod json;
 pub mod net;
 #[cfg(feature = "serde")]
 pub mod serde;
+#[cfg(feature = "service")]
+pub mod service;
 #[cfg(feature = "snowflake")]
 pub mod snowflake;
 #[cfg(feature = "str")]
@@ -231,6 +233,9 @@ pub mod prelude {
 
     #[cfg(feature = "smart-default")]
     pub use ::smart_default::{self, SmartDefault};
+
+    #[cfg(feature = "service")]
+    pub use crate::service::{EasyService, EasyServices, SvcSafeSender};
 
     #[cfg(feature = "snowflake")]
     pub use crate::snowflake::*;

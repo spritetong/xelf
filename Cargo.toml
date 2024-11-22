@@ -1,6 +1,6 @@
 [package]
 name = "rsx"
-version = "0.4.5"
+version = "0.4.6"
 edition = "2021"
 rust-version = "1.77"
 
@@ -42,6 +42,7 @@ async = [
     "mio",
     "parking_lot",
     "pin-project",
+    "service",
     "tokio",
 ]
 bytes = ["dep:bytes", "bytestring", "zerocopy"]
@@ -91,6 +92,7 @@ serde = [
     "serde_repr",
     "serde_with",
 ]
+service = ["tokio"]
 signal = ["future", "tokio-stream/signal"]
 snowflake = ["smart-default"]
 str = ["ptr"]
@@ -177,13 +179,13 @@ flume = { version = "0.11", optional = true }
 parking_lot = { version = "0.12", optional = true }
 
 rust_decimal = { version = "1", optional = true }
-sea-orm = { version = "1.0", features = [
+sea-orm = { version = "1.1", features = [
     "sqlx-postgres",
     "sqlx-sqlite",
     "runtime-tokio-rustls",
     "runtime-tokio",
 ], optional = true }
-sqlx = { version = "0.7", features = [
+sqlx = { version = "0.8", features = [
     "runtime-tokio-rustls",
     "postgres",
     "sqlite",
