@@ -73,7 +73,7 @@ pub mod prelude {
     pub use crate::serde::*;
 
     #[cfg(feature = "socket2")]
-    pub use crate::net::SocketRsx;
+    pub use crate::net::SocketXlf;
     #[cfg(feature = "socket2")]
     pub use ::socket2;
 
@@ -294,7 +294,7 @@ pub mod prelude {
 /// # Examples
 ///
 /// ```
-/// use rsx::If;
+/// use xelf::If;
 ///
 /// assert_eq!(If!(true, "A", "B"), "A");
 /// assert_eq!(If!(false, "A", "B"), "B");

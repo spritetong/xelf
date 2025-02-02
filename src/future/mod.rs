@@ -9,7 +9,7 @@ pub use duplex::DuplexStream;
 pub use mpsc::{tokio_mpsc_stream, MpscStream, UnboundedSink};
 #[cfg(feature = "signal")]
 pub use signal::*;
-pub use sink::SinkRsx;
+pub use sink::SinkXlf;
 
 #[macro_export]
 macro_rules! future_delegate_access_inner {

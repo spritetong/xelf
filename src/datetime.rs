@@ -11,7 +11,7 @@ pub type UnixTimeMicros = i64;
 /// Duration in microseconds
 pub type DurationMicros = i64;
 
-pub trait UnixTimestampRsx: Sized {
+pub trait UnixTimestampXlf: Sized {
     /// Convert days into microseconds.
     fn micros_from_days(&self) -> Self;
 
@@ -46,7 +46,7 @@ pub trait UnixTimestampRsx: Sized {
     fn micros_into_utc_str(&self) -> String;
 }
 
-/// Get the default value for DateTime<Utc>, the Unix Epoch at 1970-01-01T00:00:00Z.
+/// Get the default value for `DateTime<Utc>`, the Unix Epoch at 1970-01-01T00:00:00Z.
 #[inline]
 pub fn utc_default() -> DateTimeUtc {
     Utc.timestamp_opt(0, 0).unwrap()
@@ -73,7 +73,7 @@ pub fn utc_into_str(utc: DateTimeUtc) -> String {
     )
 }
 
-impl UnixTimestampRsx for UnixTimeMicros {
+impl UnixTimestampXlf for UnixTimeMicros {
     #[inline]
     fn micros_from_days(&self) -> Self {
         self * (24 * 60 * 60 * 1_000_000)

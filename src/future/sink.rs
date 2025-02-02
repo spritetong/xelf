@@ -5,9 +5,9 @@ use std::{
     task::{Context, Poll},
 };
 
-impl<T: ?Sized, Item> SinkRsx<Item> for T where T: Sink<Item> {}
+impl<T: ?Sized, Item> SinkXlf<Item> for T where T: Sink<Item> {}
 
-pub trait SinkRsx<Item>: Sink<Item> {
+pub trait SinkXlf<Item>: Sink<Item> {
     /// Transforms the error returned by the sink.
     fn safe_sink_map_err<E, F>(self, f: F) -> SafeSinkMapErr<Self, F>
     where
@@ -18,7 +18,7 @@ pub trait SinkRsx<Item>: Sink<Item> {
     }
 }
 
-/// Sink for the [`safe_sink_map_err`](super::SinkRsx::safe_sink_map_err) method.
+/// Sink for the [`safe_sink_map_err`](super::SinkXlf::safe_sink_map_err) method.
 #[pin_project]
 #[derive(Debug, Clone)]
 pub struct SafeSinkMapErr<Si, F> {

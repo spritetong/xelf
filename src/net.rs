@@ -4,7 +4,7 @@ use std::{
 };
 
 /// Extension for socket2::socket.
-pub trait SocketRsx: Sized {
+pub trait SocketXlf: Sized {
     fn any_addr(base: IpAddr, port: u16) -> SocketAddr {
         if base.is_ipv4() {
             SocketAddr::new(Ipv4Addr::UNSPECIFIED.into(), port)
@@ -26,7 +26,7 @@ pub trait SocketRsx: Sized {
 }
 
 #[cfg(feature = "socket2")]
-impl SocketRsx for socket2::Socket {
+impl SocketXlf for socket2::Socket {
     fn udp_bind(addr: SocketAddr, v6_only: bool, reuse_address: bool) -> io::Result<Self> {
         let s = socket2::Socket::new(
             if addr.is_ipv4() {

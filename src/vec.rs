@@ -1,6 +1,6 @@
 /// Extension for vectors which item implements Copy trait.
-pub trait VecRsx {
-    /// Constructs a new Vec<T> with the specified length, and all elements are not initialized.
+pub trait VecXlf {
+    /// Constructs a new `Vec<T>` with the specified length, and all elements are not initialized.
     ///
     /// **Dangerous!** The caller is responsible for initializing the new elements.
     fn with_length(len: usize) -> Self;
@@ -11,7 +11,7 @@ pub trait VecRsx {
     fn resize_uninit(&mut self, new_len: usize);
 }
 
-impl<T: Sized + Copy> VecRsx for Vec<T> {
+impl<T: Sized + Copy> VecXlf for Vec<T> {
     #[inline]
     fn with_length(len: usize) -> Self {
         let mut v = Self::with_capacity(len);

@@ -11,7 +11,7 @@ pub use ptr::*;
 /// # Examples
 ///
 /// ```
-/// use rsx::cstr;
+/// use xelf::cstr;
 ///
 /// let name: &std::ffi::CStr = cstr!("John");
 ///

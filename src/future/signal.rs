@@ -6,10 +6,10 @@ use ::tokio_stream::StreamMap;
 /// # Examples
 ///
 /// ```
-/// use rsx::prelude::*;
+/// use xelf::prelude::*;
 ///
 /// async fn test_ctrl_c() {
-///     let mut stream = rsx::future::merge_ctrl_c(tokio_stream::empty().boxed());
+///     let mut stream = xelf::future::merge_ctrl_c(tokio_stream::empty().boxed());
 ///     println!("Please input Ctrl+C ...");
 ///     let _ = stream.next().await;
 ///     println!("Ok!");

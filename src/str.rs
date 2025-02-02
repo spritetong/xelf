@@ -3,7 +3,7 @@ pub use ::std::ffi::{CStr, CString};
 pub use ::std::os::raw::c_char;
 
 /// Extension for &str and &String.
-pub trait StrRsx {
+pub trait StrXlf {
     /// Convert the string to CString
     #[cfg(feature = "ffi")]
     fn to_cstring(&self) -> CString;
@@ -28,7 +28,7 @@ pub trait StrRsx {
         F: Fn(&str, &mut String);
 }
 
-pub trait BytesRsx {
+pub trait BytesXlf {
     /// Try to convert a nul-terminated bytes in UTF-8 to a string slice.
     ///
     /// Allow the nul byte to be in any position of the string.
@@ -38,7 +38,7 @@ pub trait BytesRsx {
     /// # Examples
     ///
     /// ```
-    /// use rsx::str::BytesRsx;
+    /// use xelf::str::BytesXlf;
     ///
     /// assert_eq!(b"a\0bc".to_utf8_with_nul(), Ok("a"));
     /// assert_eq!(b"abc".to_utf8_with_nul(), Ok("abc"));
@@ -54,7 +54,7 @@ pub trait BytesRsx {
     /// # Examples
     ///
     /// ```
-    /// use rsx::str::BytesRsx;
+    /// use xelf::str::BytesXlf;
     ///
     /// assert_eq!(b"a\0bc".to_utf8_string_with_nul(), Ok("a".to_owned()));
     /// assert_eq!(b"abc".to_utf8_string_with_nul(), Ok("abc".to_owned()));
@@ -70,7 +70,7 @@ pub trait BytesRsx {
     /// # Examples
     ///
     /// ```
-    /// use rsx::str::BytesRsx;
+    /// use xelf::str::BytesXlf;
     ///
     /// assert_eq!(b"a\0bc".to_utf8_lossy_with_nul(), "a");
     /// assert_eq!(b"abc".to_utf8_lossy_with_nul(), "abc");
@@ -86,7 +86,7 @@ pub trait BytesRsx {
     /// # Examples
     ///
     /// ```
-    /// use rsx::str::BytesRsx;
+    /// use xelf::str::BytesXlf;
     /// use std::ffi::CStr;
     ///
     /// assert_eq!(b"a\0bc".to_cstr_with_nul(), Some(CStr::from_bytes_with_nul(b"a\0").unwrap()));
@@ -96,10 +96,11 @@ pub trait BytesRsx {
     fn to_cstr_with_nul(&self) -> Option<&CStr>;
 }
 
-impl<T: AsRef<str>> StrRsx for T {
+impl<T: AsRef<str>> StrXlf for T {
     #[cfg(feature = "ffi")]
     #[inline]
     fn to_cstring(&self) -> CString {
+
         CString::new(self.as_ref()).unwrap()
     }
 
@@ -131,7 +132,7 @@ impl<T: AsRef<str>> StrRsx for T {
     /// # Exmaples
     ///
     /// ```
-    /// use rsx::str::StrRsx;
+    /// use xelf::str::StrXlf;
     ///
     /// assert_eq!("{{".render(|_, _| ()), "{");
     /// assert_eq!("}}".render(|_, _| ()), "}");
@@ -174,7 +175,7 @@ impl<T: AsRef<str>> StrRsx for T {
     }
 }
 
-impl<T: AsRef<[u8]>> BytesRsx for T {
+impl<T: AsRef<[u8]>> BytesXlf for T {
     fn to_utf8_with_nul(&self) -> Result<&str, std::str::Utf8Error> {
         let data = self.as_ref();
         // default to length if no `\0` present

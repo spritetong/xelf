@@ -20,7 +20,7 @@ pub type DbResult<T> = Result<T, DbErr>;
 
 ////////////////////////////////////////////////////////////////////////////////
 
-pub trait ModelRsx<E>
+pub trait ModelXlf<E>
 where
     E: EntityTrait,
 {
@@ -34,7 +34,7 @@ where
         A: ActiveModelTrait<Entity = E>;
 }
 
-pub trait ActiveModelRsx<E>
+pub trait ActiveModelXlf<E>
 where
     E: EntityTrait,
 {
@@ -94,7 +94,7 @@ macro_rules! impl_merge_from {
     };
 }
 
-impl<E, M> ModelRsx<E> for M
+impl<E, M> ModelXlf<E> for M
 where
     E: EntityTrait<Model = M>,
     M: ModelTrait<Entity = E> + DeserializeOwned,
@@ -102,7 +102,7 @@ where
     impl_merge_from! {M, A}
 }
 
-impl<E, A> ActiveModelRsx<E> for A
+impl<E, A> ActiveModelXlf<E> for A
 where
     E: EntityTrait,
     A: ActiveModelTrait<Entity = E>,

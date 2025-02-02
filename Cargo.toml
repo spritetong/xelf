@@ -1,5 +1,5 @@
 [package]
-name = "rsx"
+name = "xelf"
 version = "0.4.6"
 authors = ["Sprite Tong <spritetong@gmail.com>"]
 description = "A versatile Rust toolkit for self-use."
@@ -13,7 +13,7 @@ edition = "2021"
 rust-version = "1.77"
 
 [lib]
-name = "rsx"
+name = "xelf"
 path = "src/lib.rs"
 
 [features]

@@ -55,7 +55,7 @@ pub trait JsonGetOr<'a, I, T, _T> {
     ///
     /// ```
     /// use serde_json::json;
-    /// use rsx::json::*;
+    /// use xelf::json::*;
     ///
     /// let jsn = json!({"name": "Tom", "value": 100});
     ///
@@ -170,7 +170,7 @@ impl<I: Index, V: JsonIndexed<I>> JsonGetOr<'_, I, bool, bool> for V {
 ////////////////////////////////////////////////////////////////////////////////
 
 /// Extension for serde_json::Value.
-pub trait JsonObjectRsx {
+pub trait JsonObjectXlf {
     /// Insert a key-value pair into a JSON object by specifying the key name
     /// and the value to be assigned to it.
     ///
@@ -182,7 +182,7 @@ pub trait JsonObjectRsx {
     ///
     /// ```
     /// use serde_json::json;
-    /// use rsx::json::*;
+    /// use xelf::json::*;
     ///
     /// let mut jsn = json!({});
     ///
@@ -218,7 +218,7 @@ pub trait JsonObjectRsx {
     fn deep_update_with(&mut self, source: Json, allow_null: bool);
 }
 
-impl JsonObjectRsx for Json {
+impl JsonObjectXlf for Json {
     #[inline]
     fn insert_s<T: Serialize>(&mut self, k: &str, v: T) -> Option<Json> {
         self.as_object_mut().unwrap().insert(k.to_owned(), json!(v))
@@ -297,7 +297,7 @@ impl JsonObjectRsx for Json {
     }
 }
 
-impl JsonObjectRsx for Map<String, Json> {
+impl JsonObjectXlf for Map<String, Json> {
     #[inline]
     fn insert_s<T: Serialize>(&mut self, k: &str, v: T) -> Option<Json> {
         self.insert(k.to_owned(), json!(v))
