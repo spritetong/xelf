@@ -1,6 +1,6 @@
 [package]
 name = "xelf"
-version = "0.4.6"
+version = "0.4.7"
 authors = ["Sprite Tong <spritetong@gmail.com>"]
 description = "A versatile Rust toolkit for self-use."
 repository = "https://github.com/spritetong/xelf.git"
