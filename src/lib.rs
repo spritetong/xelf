@@ -4,6 +4,8 @@ pub mod collections;
 pub mod datetime;
 #[cfg(feature = "db")]
 pub mod db;
+#[cfg(feature = "esvc")]
+pub mod esvc;
 #[cfg(feature = "ffi")]
 pub mod ffi;
 #[cfg(feature = "fs")]
@@ -16,8 +18,6 @@ pub mod json;
 pub mod net;
 #[cfg(feature = "serde")]
 pub mod serde;
-#[cfg(feature = "esvc")]
-pub mod esvc;
 #[cfg(feature = "snowflake")]
 pub mod snowflake;
 #[cfg(feature = "str")]
@@ -238,7 +238,7 @@ pub mod prelude {
     pub use crate::snowflake::*;
 
     #[cfg(feature = "strum")]
-    pub use ::strum;
+    pub use ::strum::{self, EnumMessage as _};
 
     #[cfg(feature = "serde")]
     pub use ::serde::{
