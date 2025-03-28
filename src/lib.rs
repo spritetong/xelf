@@ -143,10 +143,7 @@ pub mod prelude {
     };
 
     #[cfg(feature = "derive_more")]
-    pub use ::derive_more::{
-        self,
-        derive::{AsMut, AsRef, Deref, DerefMut, Display},
-    };
+    pub use ::derive_more;
 
     #[cfg(feature = "dotenv")]
     pub use ::dotenv;
@@ -241,9 +238,7 @@ pub mod prelude {
     pub use crate::snowflake::*;
 
     #[cfg(feature = "strum")]
-    pub use ::strum::{
-        self, AsRefStr, EnumIter, EnumMessage, FromRepr, IntoEnumIterator, IntoStaticStr,
-    };
+    pub use ::strum;
 
     #[cfg(feature = "serde")]
     pub use ::serde::{

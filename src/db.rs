@@ -2,6 +2,7 @@
 #![allow(clippy::missing_transmute_annotations)]
 
 use crate::prelude::*;
+use derive_more::derive as dm;
 pub use sea_orm::{
     entity::prelude::*,
     sea_query::{
@@ -9,12 +10,12 @@ pub use sea_orm::{
         JoinOn, LikeExpr, LogicalChainOper, Query, QueryBuilder, SimpleExpr, SqlWriter,
         SqlWriterValues, UnOper,
     },
-    ActiveValue, Condition, ConnectOptions, ConnectionTrait, Database, DatabaseBackend,
-    DatabaseTransaction, DbBackend, DbErr, ExecResult, FromQueryResult, IntoActiveModel, JoinType,
-    NotSet, Order, QueryOrder, QuerySelect, QueryTrait, SelectGetableValue, SelectModel,
-    SelectTwoModel, SelectorRaw, Set, Statement, StreamTrait, TransactionTrait, Unchanged, Values,
+    ActiveValue, Condition, ConnectOptions, ConnectionTrait, Database,
+    DatabaseBackend, DatabaseTransaction, DbBackend, DbErr, ExecResult, FromQueryResult,
+    IntoActiveModel, JoinType, NotSet, Order, QueryOrder, QuerySelect, QueryTrait,
+    SelectGetableValue, SelectModel, SelectTwoModel, SelectorRaw, Set, Statement, StreamTrait,
+    TransactionTrait, Unchanged, Values,
 };
-pub use strum::EnumIter;
 
 pub type DbResult<T> = Result<T, DbErr>;
 
@@ -63,7 +64,7 @@ macro_rules! impl_merge_from {
 
             // Mark down which attribute exists in the JSON object
             let json_keys: Vec<<$M::Entity as EntityTrait>::Column> =
-                <<$M::Entity as EntityTrait>::Column>::iter()
+                <<$M::Entity as EntityTrait>::Column as sea_orm::Iterable>::iter()
                     .filter(|col| {
                         let name = col.to_string();
                         !skip.contains_ref(&name) && map.contains_key(&name)
@@ -85,7 +86,7 @@ macro_rules! impl_merge_from {
         where
             $A: ActiveModelTrait<Entity = E>,
         {
-            for col in <<$A::Entity as EntityTrait>::Column>::iter() {
+            for col in <<$A::Entity as EntityTrait>::Column as sea_orm::Iterable>::iter() {
                 if let ActiveValue::Set(v) = src.get(col) {
                     self.set(col, v);
                 }
@@ -111,7 +112,7 @@ where
     impl_merge_from! {A, A1}
 
     fn set_all(mut self) -> Self {
-        for col in <<A::Entity as EntityTrait>::Column>::iter() {
+        for col in <<A::Entity as EntityTrait>::Column as sea_orm::Iterable>::iter() {
             if let ActiveValue::Unchanged(v) = self.get(col) {
                 self.set(col, v);
             }
@@ -122,7 +123,7 @@ where
 
 ////////////////////////////////////////////////////////////////////////////////
 
-#[derive(Clone, Deref, Debug)]
+#[derive(Clone, dm::Deref, Debug)]
 pub struct IdenStr<T: AsRef<str> + Clone + Send + Sync>(pub T);
 
 impl<T: AsRef<str> + Clone + Send + Sync> Iden for IdenStr<T> {
@@ -377,7 +378,7 @@ impl RawSqlBuilder {
     pub fn into_values<T, C>(self) -> SelectorRaw<SelectGetableValue<T, C>>
     where
         T: sea_orm::TryGetableMany,
-        C: sea_orm::Iterable + strum::IntoEnumIterator + Iden,
+        C: sea_orm::Iterable + sea_orm::strum::IntoEnumIterator + Iden,
     {
         SelectorRaw::<SelectGetableValue<T, C>>::with_columns::<T, C>(self.into())
     }
@@ -547,7 +548,7 @@ impl SqlHelper {
     pub fn into_values<T, C>(self) -> SelectorRaw<SelectGetableValue<T, C>>
     where
         T: sea_orm::TryGetableMany,
-        C: sea_orm::Iterable + strum::IntoEnumIterator + Iden,
+        C: sea_orm::Iterable + sea_orm::strum::IntoEnumIterator + Iden,
     {
         SelectorRaw::<SelectGetableValue<T, C>>::with_columns::<T, C>(self.into())
     }
@@ -921,7 +922,7 @@ impl OrderByHelper {
                         writer(Expr::col((self.entity.clone(), id_col)).ne(after_id));
                     }
                 } else {
-                    for key in <E as EntityTrait>::PrimaryKey::iter() {
+                    for key in <<E as EntityTrait>::PrimaryKey as sea_orm::Iterable>::iter() {
                         let col = key.into_column();
                         let value = model.get(col);
                         if !sea_orm::sea_query::sea_value_to_json_value(&value).is_null() {
@@ -995,10 +996,10 @@ mod tests {
             Eq,
             PartialOrd,
             Ord,
-            AsRefStr,
-            EnumIter,
-            EnumMessage,
-            FromRepr,
+            strum::AsRefStr,
+            sea_orm::EnumIter,
+            strum::EnumMessage,
+            strum::FromRepr,
             Serialize_repr,
             Deserialize_repr,
             SmartDefault,
@@ -1046,7 +1047,7 @@ mod tests {
             pub salt: String,
         }
 
-        #[derive(Copy, Clone, Debug, EnumIter)]
+        #[derive(Copy, Clone, Debug, sea_orm::EnumIter)]
         pub enum Relation {}
 
         impl RelationTrait for Relation {
