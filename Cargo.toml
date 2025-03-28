@@ -1,11 +1,17 @@
 [package]
 name = "xelf"
-version = "0.4.7"
+version = "0.5.0"
 authors = ["Sprite Tong <spritetong@gmail.com>"]
 description = "A versatile Rust toolkit for self-use."
 repository = "https://github.com/spritetong/xelf.git"
-keywords = ["async", "utilities", "ffi", "database", "toolkit"]
-categories = ["asynchronous", "database", "development-tools::ffi", "rust-patterns", "network-programming"]
+keywords = ["async", "ffi", "database", "serde", "snowflake"]
+categories = [
+    "asynchronous",
+    "database",
+    "development-tools::ffi",
+    "rust-patterns",
+    "network-programming",
+]
 documentation = "https://docs.rs/xelf"
 license = "MIT"
 readme = "README.md"
@@ -17,7 +23,7 @@ name = "xelf"
 path = "src/lib.rs"
 
 [features]
-default = ["minimal"]
+default = ["full"]
 minimal = ["datetime", "collections", "derive", "io", "once_cell"]
 common = [
     "minimal",
@@ -153,7 +159,7 @@ tokio-stream = { version = "0.1", features = [
 tokio-util = { version = "0.7", features = ["full"], optional = true }
 
 hex = { version = "0.4", optional = true }
-hex-literal = { version = "1.0", optional = true }
+hex-literal = { version = "1", optional = true }
 
 ipnetwork = { version = "0.21", optional = true }
 socket2 = { version = "0.5", optional = true }
