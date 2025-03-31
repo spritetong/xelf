@@ -1,6 +1,6 @@
 [package]
 name = "xelf"
-version = "0.5.0"
+version = "0.5.1"
 authors = ["Sprite Tong <spritetong@gmail.com>"]
 description = "A versatile Rust toolkit for self-use."
 repository = "https://github.com/spritetong/xelf.git"
@@ -23,7 +23,7 @@ name = "xelf"
 path = "src/lib.rs"
 
 [features]
-default = ["common"]
+default = ["minimal"]
 minimal = ["datetime", "collections", "derive", "io", "once_cell"]
 common = [
     "minimal",
@@ -101,6 +101,7 @@ serde = [
     "chrono/serde",
     "collections",
     "hex",
+    "ipnetwork/serde",
     "num",
     "serde_json",
     "serde_repr",
