@@ -23,7 +23,7 @@ name = "xelf"
 path = "src/lib.rs"
 
 [features]
-default = ["full"]
+default = ["common"]
 minimal = ["datetime", "collections", "derive", "io", "once_cell"]
 common = [
     "minimal",
@@ -131,6 +131,8 @@ derive_more = { version = "2.0", features = [
     "deref",
     "deref_mut",
     "display",
+    "from",
+    "into",
 ], optional = true }
 smart-default = { version = "0.7", optional = true }
 strum = { version = "0.27", features = ["derive"], optional = true }

@@ -1,7 +1,7 @@
 mod handle_set;
 mod ptr;
 
-pub use handle_set::*;
+pub use handle_set::{Handle as FfiHandle, HandleSet as FfiHandleSet};
 pub use ptr::*;
 
 /// Define a literal C-string with a NUL terminator.
