@@ -93,7 +93,10 @@ log = ["dep:log", "env_logger", "dotenv"]
 net = ["ipnetwork", "socket2", "url", "winapi"]
 num = ["num-traits"]
 ptr = ["once_cell"]
-rustls = ["dep:aws-lc-rs", "dep:rustls", "rustls-pemfile", "tokio-rustls"]
+rustls = ["dep:rustls", "rustls-pemfile", "tokio-rustls"]
+rustls-aws-lc-rs = ["rustls/aws-lc-rs", "tokio-rustls/aws-lc-rs"]
+rustls-logging = ["rustls/logging", "tokio-rustls/logging"]
+rustls-ring = ["rustls/ring"]
 serde = [
     "dep:serde",
     "base64",
@@ -110,7 +113,7 @@ serde = [
 signal = ["future", "tokio-stream/signal"]
 snowflake = ["smart-default"]
 str = ["ptr"]
-sync = ["arc-swap", "crossbeam", "flume", "num_cpus", "parking_lot"]
+sync = ["arc-swap", "crossbeam", "flume", "num_cpus", "parking_lot", "triomphe"]
 tokio = ["dep:tokio", "tokio-stream", "tokio-util"]
 vec = []
 
@@ -151,7 +154,7 @@ futures-util = { version = "0.3", optional = true }
 mio = { version = "1", optional = true }
 pin-project = { version = "1", optional = true }
 tokio = { version = "1", features = ["full"], optional = true }
-tokio-rustls = { version = "0.26", optional = true }
+tokio-rustls = { version = "0.26", default-features = false, features = ["tls12"], optional = true }
 tokio-stream = { version = "0.1", features = [
     "fs",
     "io-util",
@@ -186,14 +189,14 @@ serde_with = { version = "3", features = ["base64"], optional = true }
 
 tempfile = { version = "3", optional = true }
 
-aws-lc-rs = { version = "1", features = ["bindgen"], optional = true }
-rustls = { version = "0.23", optional = true }
+rustls = { version = "0.23", default-features = false, features = ["std", "tls12"], optional = true }
 rustls-pemfile = { version = "2.2", optional = true }
 
 arc-swap = { version = "1", optional = true }
 crossbeam = { version = "0.8", optional = true }
 flume = { version = "0.11", optional = true }
 parking_lot = { version = "0.12", optional = true }
+triomphe = { version = "0.1", optional = true }
 
 rust_decimal = { version = "1", optional = true }
 sea-orm = { version = "1.1", features = [
@@ -208,6 +211,9 @@ sqlx = { version = "0.8", features = [
     "sqlite",
     "migrate",
 ], optional = true }
+
+[target.'cfg(not(target_env = "msvc"))'.dependencies]
+rustls = { version = "0.23", default-features = false, features = ["aws-lc-rs"], optional = true }
 
 [target.'cfg(windows)'.dependencies]
 winapi = { version = "0.3", features = ["mswsock"], optional = true }

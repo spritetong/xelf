@@ -277,6 +277,9 @@ pub mod prelude {
     #[cfg(feature = "tokio-util")]
     pub use ::tokio_util::{self, sync::CancellationToken};
 
+    #[cfg(feature = "triomphe")]
+    pub use ::triomphe::{Arc as Trc, ArcBorrow as TrcBorrow, UniqueArc as UniqueTrc};
+
     #[cfg(feature = "url")]
     pub use ::url::{self, Url};
 
