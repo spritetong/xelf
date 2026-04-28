@@ -10,11 +10,10 @@ pub use sea_orm::{
         JoinOn, LikeExpr, LogicalChainOper, Query, QueryBuilder, SimpleExpr, SqlWriter,
         SqlWriterValues, UnOper,
     },
-    ActiveValue, Condition, ConnectOptions, ConnectionTrait, Database,
-    DatabaseBackend, DatabaseTransaction, DbBackend, DbErr, ExecResult, FromQueryResult,
-    IntoActiveModel, JoinType, NotSet, Order, QueryOrder, QuerySelect, QueryTrait,
-    SelectGetableValue, SelectModel, SelectTwoModel, SelectorRaw, Set, Statement, StreamTrait,
-    TransactionTrait, Unchanged, Values,
+    ActiveValue, Condition, ConnectOptions, ConnectionTrait, Database, DatabaseBackend,
+    DatabaseTransaction, DbBackend, DbErr, ExecResult, FromQueryResult, IntoActiveModel, JoinType,
+    NotSet, Order, QueryOrder, QuerySelect, QueryTrait, SelectGetableValue, SelectModel,
+    SelectTwoModel, SelectorRaw, Set, Statement, StreamTrait, TransactionTrait, Unchanged, Values,
 };
 
 pub type DbResult<T> = Result<T, DbErr>;
@@ -832,7 +831,7 @@ impl OrderByHelper {
             for cap in re.captures_iter(order_by) {
                 self.order_by.push(OrderByField {
                     field: cap[1].to_owned(),
-                    asc: cap[2].to_ascii_uppercase() != "DESC",
+                    asc: !cap[2].eq_ignore_ascii_case("DESC"),
                     wrapper_func: IdenStr(
                         wrapper_funcs
                             .and_then(|x| x.get(&cap[1]).map(|x| x.as_ref().to_owned()))
@@ -915,7 +914,7 @@ impl OrderByHelper {
         if let Some(after @ &Json::Object(_)) = after {
             if let Ok(model) = serde_json::from_value::<E::Model>(after.clone()) {
                 // Filter: "<id_field>" <> after.<id_field>
-                let id_col_name = self.id_field.split('.').last().unwrap();
+                let id_col_name = self.id_field.split('.').next_back().unwrap();
                 if let Ok(id_col) = E::Column::from_str(id_col_name) {
                     let after_id = model.get(id_col);
                     if !sea_orm::sea_query::sea_value_to_json_value(&after_id).is_null() {

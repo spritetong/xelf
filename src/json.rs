@@ -211,9 +211,9 @@ pub trait JsonObjectXlf {
     /// # Arguments
     ///
     /// * `source`: the source JSON object.
-    /// * `allow_null`:  If set to `true`, the function allows updating target fields
-    ///                  with null values from the source object.
-    ///                  If set to `false`, it ignores null values from the source object.
+    /// * `allow_null`: If set to `true`, the function allows updating target fields
+    ///   with null values from the source object.
+    ///   If set to `false`, it ignores null values from the source object.
     ///
     fn deep_update_with(&mut self, source: Json, allow_null: bool);
 }

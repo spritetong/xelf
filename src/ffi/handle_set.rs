@@ -69,7 +69,7 @@ impl HandleSet {
                 let instance = clone_from_handle!(handle, T);
                 drop_handle!(handle, T);
                 guard.remove(&handle);
-                return Some(instance);
+                Some(instance)
             } else {
                 panic!(
                     "Attemp to remove an `{}`, but the handle {} does not match.",
