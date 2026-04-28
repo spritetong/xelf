@@ -252,5 +252,7 @@ mod tests {
         println!("{}", &s);
         let b: Person = serde_json::from_str(&s).unwrap();
         assert_eq!(&a, &b);
+
+        let _ = Data(true);
     }
 }
