@@ -171,11 +171,9 @@ pub mod prelude {
     pub use ::futures_util::{self, FutureExt, SinkExt, StreamExt, TryStreamExt};
 
     #[cfg(feature = "hashlink")]
-    pub use ::hashlink;
-    #[cfg(all(feature = "hashlink", not(feature = "ritelinked")))]
-    pub use ::hashlink::{linked_hash_map, linked_hash_set, LinkedHashMap, LinkedHashSet};
-    #[cfg(feature = "ritelinked")]
-    pub use ::ritelinked::{self, linked_hash_map, linked_hash_set, LinkedHashMap, LinkedHashSet};
+    pub use ::hashlink::{self, linked_hash_map, linked_hash_set, LinkedHashMap, LinkedHashSet};
+    #[cfg(feature = "indexmap")]
+    pub use ::indexmap::{self, IndexMap, IndexSet};
 
     #[cfg(feature = "hex")]
     pub use ::hex::{self, FromHex, ToHex};
@@ -190,9 +188,6 @@ pub mod prelude {
 
     #[cfg(feature = "maplit")]
     pub use ::maplit::{self, btreemap, btreeset, hashmap, hashset};
-
-    #[cfg(feature = "ouroboros")]
-    pub use ::ouroboros::{self, self_referencing};
 
     #[cfg(feature = "parking_lot")]
     pub use ::parking_lot::{self, Mutex as PlMutex, RwLock as PlRwLock};

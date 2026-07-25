@@ -1,11 +1,11 @@
-use crate::prelude::{linked_hash_map::RawEntryMut, LinkedHashMap};
+use indexmap::{map::Entry as IndexEntry, IndexMap};
 use parking_lot::RwLock;
 use std::any::{Any, TypeId};
 
 pub type Handle = usize;
 
 pub struct HandleSet {
-    map: RwLock<LinkedHashMap<Handle, Entry>>,
+    map: RwLock<IndexMap<Handle, Entry>>,
 }
 
 struct Entry {
@@ -16,7 +16,7 @@ struct Entry {
 impl Default for HandleSet {
     fn default() -> Self {
         Self {
-            map: RwLock::new(LinkedHashMap::new()),
+            map: RwLock::new(IndexMap::new()),
         }
     }
 }
@@ -40,19 +40,16 @@ impl HandleSet {
         }
 
         let handle = Box::leak(Box::new(instance)) as *const _ as Handle;
-        match self.map.write().raw_entry_mut().from_key(&handle) {
-            RawEntryMut::Occupied(_) => {
+        match self.map.write().entry(handle) {
+            IndexEntry::Occupied(_) => {
                 drop_handle!(handle, T);
                 unreachable!();
             }
-            RawEntryMut::Vacant(vacant) => {
-                vacant.insert(
-                    handle,
-                    Entry {
-                        type_id: TypeId::of::<T>(),
-                        drop: drop_handle::<T>,
-                    },
-                );
+            IndexEntry::Vacant(vacant) => {
+                vacant.insert(Entry {
+                    type_id: TypeId::of::<T>(),
+                    drop: drop_handle::<T>,
+                });
             }
         }
         handle
@@ -68,7 +65,7 @@ impl HandleSet {
             if entry.type_id == TypeId::of::<T>() {
                 let instance = clone_from_handle!(handle, T);
                 drop_handle!(handle, T);
-                guard.remove(&handle);
+                guard.swap_remove(&handle);
                 Some(instance)
             } else {
                 panic!(

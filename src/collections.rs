@@ -91,10 +91,10 @@ impl_contains!(@map K, [], impl<K, Q, V, S> for hashlink::LinkedHashMap<K, V, S>
 #[cfg(feature = "hashlink")]
 impl_contains!(@set K, [], impl<K, Q, S> for hashlink::LinkedHashSet<K, S> where S: BuildHasher);
 
-#[cfg(feature = "ritelinked")]
-impl_contains!(@map K, [], impl<K, Q, V, S> for ritelinked::LinkedHashMap<K, V, S> where S: BuildHasher);
-#[cfg(feature = "ritelinked")]
-impl_contains!(@set K, [], impl<K, Q, S> for ritelinked::LinkedHashSet<K, S> where S: BuildHasher);
+#[cfg(feature = "indexmap")]
+impl_contains!(@map K, [], impl<K, Q, V, S> for indexmap::IndexMap<K, V, S> where S: BuildHasher);
+#[cfg(feature = "indexmap")]
+impl_contains!(@set K, [], impl<K, Q, S> for indexmap::IndexSet<K, S> where S: BuildHasher);
 
 #[cfg(feature = "serde_json")]
 impl_contains!(@map String, [], impl<Q> for Map<String, Json> where);
@@ -127,6 +127,19 @@ mod tests {
         {
             let a = json!({"1": 1, "2": 2, "3": 3});
             assert!(a.as_object().unwrap().contains_ref("1"));
+        }
+
+        #[cfg(feature = "indexmap")]
+        {
+            let mut map = indexmap::IndexMap::new();
+            map.insert("key1".to_string(), 100);
+            assert!(map.contains_ref("key1"));
+            assert!(!map.contains_ref("key2"));
+
+            let mut set = indexmap::IndexSet::new();
+            set.insert("item1".to_string());
+            assert!(set.contains_ref("item1"));
+            assert!(!set.contains_ref("item2"));
         }
     }
 }

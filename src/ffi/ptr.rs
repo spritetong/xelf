@@ -18,25 +18,25 @@ pub trait RawPtrOps: Sized {
     #[must_use]
     #[inline(always)]
     unsafe fn iadd(&self, count: isize) -> &'static Self {
-        &*(self as *const Self).wrapping_offset(count)
+        unsafe { &*(self as *const Self).wrapping_offset(count) }
     }
 
     #[must_use]
     #[inline(always)]
     unsafe fn iadd_mut(&mut self, count: isize) -> &'static mut Self {
-        &mut *(self as *mut Self).wrapping_offset(count)
+        unsafe { &mut *(self as *mut Self).wrapping_offset(count) }
     }
 
     #[must_use]
     #[inline(always)]
     unsafe fn uadd(&self, count: usize) -> &'static Self {
-        &*(self as *const Self).wrapping_add(count)
+        unsafe { &*(self as *const Self).wrapping_add(count) }
     }
 
     #[must_use]
     #[inline(always)]
     unsafe fn uadd_mut(&mut self, count: usize) -> &'static mut Self {
-        &mut *(self as *mut Self).wrapping_add(count)
+        unsafe { &mut *(self as *mut Self).wrapping_add(count) }
     }
 
     #[must_use]
@@ -54,13 +54,13 @@ pub trait RawPtrOps: Sized {
     #[must_use]
     #[inline(always)]
     unsafe fn slice(&self, len: usize) -> &'static [Self] {
-        slice::from_raw_parts(self, len)
+        unsafe { slice::from_raw_parts(self, len) }
     }
 
     #[must_use]
     #[inline(always)]
     unsafe fn slice_mut(&mut self, len: usize) -> &'static mut [Self] {
-        slice::from_raw_parts_mut(self, len)
+        unsafe { slice::from_raw_parts_mut(self, len) }
     }
 }
 
@@ -95,32 +95,32 @@ impl<T: 'static + Copy + Sized> SlicePtrOps for [T] {
 
     #[inline(always)]
     unsafe fn begin(&self) -> &'static Self::Item {
-        &*self.as_ptr()
+        unsafe { &*self.as_ptr() }
     }
 
     #[inline(always)]
     unsafe fn end(&self) -> &'static Self::Item {
-        &*self.as_ptr().wrapping_add(self.len())
+        unsafe { &*self.as_ptr().wrapping_add(self.len()) }
     }
 
     #[inline(always)]
     unsafe fn begin_mut(&mut self) -> &'static mut Self::Item {
-        &mut *self.as_mut_ptr()
+        unsafe { &mut *self.as_mut_ptr() }
     }
 
     #[inline(always)]
     unsafe fn end_mut(&mut self) -> &'static mut Self::Item {
-        &mut *self.as_mut_ptr().wrapping_add(self.len())
+        unsafe { &mut *self.as_mut_ptr().wrapping_add(self.len()) }
     }
 
     #[inline]
     unsafe fn slice_unchecked_at(&self, at: usize) -> &[Self::Item] {
-        self.begin().uadd(at).slice(self.len() - at)
+        unsafe { self.begin().uadd(at).slice(self.len() - at) }
     }
 
     #[inline]
     unsafe fn slice_unchecked_at_mut(&mut self, at: usize) -> &mut [Self::Item] {
-        self.begin_mut().uadd_mut(at).slice_mut(self.len() - at)
+        unsafe { self.begin_mut().uadd_mut(at).slice_mut(self.len() - at) }
     }
 
     #[inline]

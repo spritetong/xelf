@@ -14,6 +14,7 @@ pub struct Snowflake {
 impl Snowflake {
     pub const EPOCH_2021: i64 = 1_627_588_000_000;
     pub const EPOCH_2022: i64 = 1_640_995_200_000;
+    pub const EPOCH_2026: i64 = 1_767_225_600_000;
 
     const TIME_SHIFT: i32 = 22;
     const WID_SHIFT: i32 = 17;

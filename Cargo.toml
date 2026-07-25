@@ -1,6 +1,6 @@
 [package]
 name = "xelf"
-version = "0.5.3"
+version = "0.6.0"
 authors = ["Sprite Tong <spritetong@gmail.com>"]
 description = "A versatile Rust toolkit for self-use."
 repository = "https://github.com/spritetong/xelf.git"
@@ -16,15 +16,14 @@ documentation = "https://docs.rs/xelf"
 license = "MIT"
 readme = "README.md"
 edition = "2021"
-rust-version = "1.77"
+rust-version = "1.80"
 
 [lib]
 name = "xelf"
 path = "src/lib.rs"
 
 [features]
-#default = ["minimal"]
-default = ["full"]
+default = ["minimal"]
 minimal = ["datetime", "collections", "derive", "io"]
 common = [
     "minimal",
@@ -37,7 +36,6 @@ common = [
     "hex",
     "log",
     "net",
-    "ouroboros",
     "ptr",
     "regex",
     "serde",
@@ -71,7 +69,6 @@ db = [
     "hashmap",
     "json",
     "minimal",
-    "ouroboros",
     "regex",
     "rust_decimal",
     "snowflake",
@@ -84,9 +81,9 @@ db = [
 derive = ["derive_more", "smart-default", "strum"]
 esvc = ["tokio"]
 fs = ["io", "path-absolutize", "tempfile"]
-ffi = ["cfg-if", "hashlink", "str", "sync", "zerocopy"]
+ffi = ["cfg-if", "indexmap", "str", "sync", "zerocopy"]
 future = ["futures", "futures-util", "pin-project", "tokio"]
-hashmap = ["ahash", "hashlink", "maplit"]
+hashmap = ["ahash", "hashlink", "indexmap", "maplit"]
 hex = ["dep:hex", "hex-literal"]
 io = []
 json = ["serde"]
@@ -120,8 +117,8 @@ vec = []
 [dependencies]
 ahash = { version = "0.8", optional = true }
 maplit = { version = "1", optional = true }
-ritelinked = { version = "0.3", optional = true }
-hashlink = { version = "0.11", optional = true }
+hashlink = { version = "0.12", optional = true }
+indexmap = { version = "2", optional = true }
 smallvec = { version = "1", optional = true }
 
 bytes = { version = "1", optional = true }
@@ -145,7 +142,7 @@ cfg-if = { version = "1", optional = true }
 dotenv = { version = "0.15", optional = true }
 env_logger = { version = "0.11", optional = true }
 log = { version = "0.4", optional = true }
-path-absolutize = { version = "3", optional = true }
+path-absolutize = { version = "4", optional = true }
 
 async-stream = { version = "0.3", optional = true }
 async-trait = { version = "0.1", optional = true }
@@ -178,8 +175,6 @@ num-traits = { version = "0.2", optional = true }
 
 num_cpus = { version = "1", optional = true }
 zerocopy = { version = "0.8", features = ["derive"], optional = true }
-
-ouroboros = { version = "0.18", optional = true }
 
 regex = { version = "1", optional = true }
 
