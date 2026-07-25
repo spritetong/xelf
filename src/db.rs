@@ -13,9 +13,9 @@ use indexmap::IndexMap;
 pub use sea_orm::{
     entity::prelude::*,
     sea_query::{
-        sea_value_to_json_value, BinOper, DynIden, Expr, ExprTrait, Func, FunctionCall, IntoIden,
-        JoinOn, LikeExpr, LogicalChainOper, MysqlQueryBuilder, PostgresQueryBuilder, Query,
-        QueryBuilder, SimpleExpr, SqlWriter, SqlWriterValues, SqliteQueryBuilder, UnOper,
+        sea_value_to_json_value, BinOper, DynIden, Expr, Func, FunctionCall, IntoIden, JoinOn,
+        LikeExpr, LogicalChainOper, MysqlQueryBuilder, PostgresQueryBuilder, Query, QueryBuilder,
+        SimpleExpr, SqlWriter, SqlWriterValues, SqliteQueryBuilder, UnOper,
     },
     ActiveValue, Condition, ConnectOptions, ConnectionTrait, Database, DatabaseBackend,
     DatabaseTransaction, DbBackend, DbErr, ExecResult, FromQueryResult, IntoActiveModel, JoinType,
@@ -26,6 +26,11 @@ use std::sync::LazyLock;
 
 /// Result type alias for database operations.
 pub type DbResult<T> = Result<T, DbErr>;
+
+#[allow(non_snake_case)]
+pub mod ExprTrait {
+    pub use sea_orm::sea_query::ExprTrait as T;
+}
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -859,13 +864,13 @@ impl ExactSizeIterator for SqlParamIterator {}
 
 /// Thread-safe SQL template cache manager for reusing parsed [SqlHelper] templates.
 pub struct SqlCache {
-    map: PlRwLock<LinkedHashMap<String, Arc<SqlHelper>>>,
+    map: PlRwLock<IndexMap<String, Arc<SqlHelper>>>,
 }
 
 impl Default for SqlCache {
     fn default() -> Self {
         Self {
-            map: PlRwLock::new(LinkedHashMap::new()),
+            map: PlRwLock::new(IndexMap::new()),
         }
     }
 }
@@ -888,13 +893,7 @@ impl SqlCache {
                     drop(guard);
                     // Insert a new SQL.
                     let sql = Arc::new(maker(db_backend));
-                    self.map
-                        .write()
-                        .raw_entry_mut()
-                        .from_key(&name)
-                        .or_insert(name, sql)
-                        .1
-                        .clone()
+                    self.map.write().entry(name).or_insert(sql).clone()
                 }
             }
         };
@@ -907,7 +906,7 @@ impl SqlCache {
         N: AsRef<str>,
     {
         let name = format!("{:?}://{}", db_backend, name.as_ref());
-        self.map.write().remove(&name)
+        self.map.write().swap_remove(&name)
     }
 
     /// Clears all cached SQL templates.
@@ -1064,15 +1063,21 @@ impl OrderByHelper {
                 let id_col_name = self.id_field.split('.').next_back().unwrap();
                 if let Ok(id_col) = E::Column::from_str(id_col_name) {
                     let after_id = model.get(id_col);
-                    if !serde_json::Value::is_null(&sea_value_to_json_value(&after_id)) {
-                        writer(Expr::col((self.entity.clone(), id_col)).ne(after_id));
+                    if !sea_value_to_json_value(&after_id).is_null() {
+                        writer(ExprTrait::T::ne(
+                            Expr::col((self.entity.clone(), id_col)),
+                            after_id,
+                        ));
                     }
                 } else {
                     for key in <<E as EntityTrait>::PrimaryKey as sea_orm::Iterable>::iter() {
                         let col = key.into_column();
                         let value = model.get(col);
-                        if !serde_json::Value::is_null(&sea_value_to_json_value(&value)) {
-                            writer(Expr::col((self.entity.clone(), col)).ne(value));
+                        if !sea_value_to_json_value(&value).is_null() {
+                            writer(ExprTrait::T::ne(
+                                Expr::col((self.entity.clone(), col)),
+                                value,
+                            ));
                         }
                     }
                 }
@@ -1091,9 +1096,9 @@ impl OrderByHelper {
                                         Expr::expr(Func::cust(pat.wrapper_func.clone()).arg(value))
                                 }
                                 if pat.asc {
-                                    writer(field.gte(value));
+                                    writer(ExprTrait::T::gte(field, value));
                                 } else {
-                                    writer(field.lte(value));
+                                    writer(ExprTrait::T::lte(field, value));
                                 }
                             }
                         }
@@ -1254,9 +1259,9 @@ mod tests {
             q.bind_param(":order_by", "ORDER BY name");
             q.bind_param(":limit", "LIMIT 100");
 
-            let a = Expr::expr(Expr::cust("A")).is_in(["1", "2", "3"]);
+            let a = Expr::expr(ExprTrait::T::is_in(Expr::cust("A"), ["1", "2", "3"]));
             println!("{}", q.expr_to_string(&a));
-            let a = Expr::expr(Expr::cust("A")).is_in([Utc::now()]);
+            let a = Expr::expr(ExprTrait::T::is_in(Expr::cust("A"), [Utc::now()]));
             println!("{}", q.expr_to_string(&a));
 
             let statement = q.into_statement();
