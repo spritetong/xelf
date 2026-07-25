@@ -23,8 +23,9 @@ name = "xelf"
 path = "src/lib.rs"
 
 [features]
-default = ["minimal"]
-minimal = ["datetime", "collections", "derive", "io", "once_cell"]
+#default = ["minimal"]
+default = ["full"]
+minimal = ["datetime", "collections", "derive", "io"]
 common = [
     "minimal",
     "async",
@@ -92,9 +93,8 @@ json = ["serde"]
 log = ["dep:log", "env_logger", "dotenv"]
 net = ["ipnetwork", "socket2", "url", "winapi"]
 num = ["num-traits"]
-ptr = ["once_cell"]
+ptr = []
 rustls = ["dep:rustls", "rustls-pemfile", "tokio-rustls"]
-rustls-aws-lc-rs = ["rustls/aws-lc-rs", "tokio-rustls/aws-lc-rs"]
 rustls-logging = ["rustls/logging", "tokio-rustls/logging"]
 rustls-ring = ["rustls/ring"]
 serde = [
@@ -129,7 +129,7 @@ bytestring = { version = "1", optional = true }
 
 chrono = { version = "0.4", optional = true }
 
-derive_more = { version = "2.1", features = [
+derive_more = { version = "2", features = [
     "as_ref",
     "debug",
     "deref",
@@ -154,7 +154,10 @@ futures-util = { version = "0.3", optional = true }
 mio = { version = "1", optional = true }
 pin-project = { version = "1", optional = true }
 tokio = { version = "1", features = ["full"], optional = true }
-tokio-rustls = { version = "0.26", default-features = false, features = ["tls12"], optional = true }
+tokio-rustls = { version = "0.26", features = [
+    "tls12",
+    "aws-lc-rs",
+], optional = true }
 tokio-stream = { version = "0.1", features = [
     "fs",
     "io-util",
@@ -176,12 +179,11 @@ num-traits = { version = "0.2", optional = true }
 num_cpus = { version = "1", optional = true }
 zerocopy = { version = "0.8", features = ["derive"], optional = true }
 
-once_cell = { version = "1", optional = true }
 ouroboros = { version = "0.18", optional = true }
 
 regex = { version = "1", optional = true }
 
-base64 = { version = "0.22", optional = true }
+base64 = { version = "0.23", optional = true }
 serde = { version = "1", features = ["derive"], optional = true }
 serde_json = { version = "1", optional = true }
 serde_repr = { version = "0.1", optional = true }
@@ -189,7 +191,11 @@ serde_with = { version = "3", features = ["base64"], optional = true }
 
 tempfile = { version = "3", optional = true }
 
-rustls = { version = "0.23", default-features = false, features = ["std", "tls12"], optional = true }
+rustls = { version = "0.23", features = [
+    "std",
+    "tls12",
+    "aws-lc-rs",
+], optional = true }
 rustls-pemfile = { version = "2.2", optional = true }
 
 arc-swap = { version = "1", optional = true }
@@ -199,21 +205,20 @@ parking_lot = { version = "0.12", optional = true }
 triomphe = { version = "0.1", optional = true }
 
 rust_decimal = { version = "1", optional = true }
-sea-orm = { version = "1.1", features = [
+sea-orm = { version = "2", features = [
     "sqlx-postgres",
     "sqlx-sqlite",
     "runtime-tokio-rustls",
     "runtime-tokio",
+    "with-json",
 ], optional = true }
-sqlx = { version = "0.8", features = [
-    "runtime-tokio-rustls",
+sqlx = { version = "0.9", features = [
+    "tls-rustls-aws-lc-rs",
+    "runtime-tokio",
     "postgres",
     "sqlite",
     "migrate",
 ], optional = true }
-
-[target.'cfg(not(target_env = "msvc"))'.dependencies]
-rustls = { version = "0.23", default-features = false, features = ["aws-lc-rs"], optional = true }
 
 [target.'cfg(windows)'.dependencies]
 winapi = { version = "0.3", features = ["mswsock"], optional = true }

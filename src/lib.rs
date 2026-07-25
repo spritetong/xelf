@@ -102,7 +102,7 @@ pub mod prelude {
         rc::Rc,
         slice,
         str::{self, FromStr},
-        sync::{self, atomic::*, Arc, Mutex as StdMutex, RwLock as StdRwLock},
+        sync::{self, atomic::*, Arc, LazyLock, Mutex as StdMutex, OnceLock, RwLock as StdRwLock},
         thread,
     };
 
@@ -190,12 +190,6 @@ pub mod prelude {
 
     #[cfg(feature = "maplit")]
     pub use ::maplit::{self, btreemap, btreeset, hashmap, hashset};
-
-    #[cfg(feature = "once_cell")]
-    pub use once_cell::{
-        self,
-        sync::{Lazy, OnceCell},
-    };
 
     #[cfg(feature = "ouroboros")]
     pub use ::ouroboros::{self, self_referencing};

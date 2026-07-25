@@ -6,15 +6,16 @@ use derive_more::derive as dm;
 pub use sea_orm::{
     entity::prelude::*,
     sea_query::{
-        BinOper, ConditionExpression, DynIden, Expr, Func, Function, FunctionCall, IntoIden,
-        JoinOn, LikeExpr, LogicalChainOper, Query, QueryBuilder, SimpleExpr, SqlWriter,
-        SqlWriterValues, UnOper,
+        sea_value_to_json_value, BinOper, DynIden, Expr, ExprTrait, Func, FunctionCall, IntoIden,
+        JoinOn, LikeExpr, LogicalChainOper, MysqlQueryBuilder, PostgresQueryBuilder, Query,
+        QueryBuilder, SimpleExpr, SqlWriter, SqlWriterValues, SqliteQueryBuilder, UnOper,
     },
     ActiveValue, Condition, ConnectOptions, ConnectionTrait, Database, DatabaseBackend,
     DatabaseTransaction, DbBackend, DbErr, ExecResult, FromQueryResult, IntoActiveModel, JoinType,
     NotSet, Order, QueryOrder, QuerySelect, QueryTrait, SelectGetableValue, SelectModel,
     SelectTwoModel, SelectorRaw, Set, Statement, StreamTrait, TransactionTrait, Unchanged, Values,
 };
+use std::sync::LazyLock;
 
 pub type DbResult<T> = Result<T, DbErr>;
 
@@ -126,8 +127,8 @@ where
 pub struct IdenStr<T: AsRef<str> + Clone + Send + Sync>(pub T);
 
 impl<T: AsRef<str> + Clone + Send + Sync> Iden for IdenStr<T> {
-    fn unquoted(&self, s: &mut dyn std::fmt::Write) {
-        let _ = s.write_str(self.0.as_ref());
+    fn unquoted(&self) -> &str {
+        self.0.as_ref()
     }
 }
 
@@ -169,27 +170,27 @@ pub trait DbBackendTrait {
         V: Into<Value>,
         I: IntoIterator<Item = V>,
     {
-        Expr::cust_with_values(_db_cust_with_values(self.backend(), s.as_ref()).as_str(), v)
+        Expr::cust_with_values(_db_cust_with_values(self.backend(), s.as_ref()), v)
     }
 
     fn and_optional<P, C>(&self, param: P, condition: C) -> Condition
     where
         P: Into<Value>,
-        C: Into<ConditionExpression>,
+        C: Into<Condition>,
     {
         Condition::any()
             .add(self.cust_with_values("0 = ?", [P::into(param)]))
-            .add(C::into(condition))
+            .add(condition.into())
     }
 
     fn or_optional<P, C>(&self, param: P, condition: C) -> Condition
     where
         P: Into<Value>,
-        C: Into<ConditionExpression>,
+        C: Into<Condition>,
     {
         Condition::all()
             .add(self.cust_with_values("0 <> ?", [P::into(param)]))
-            .add(C::into(condition))
+            .add(condition.into())
     }
 
     fn now(&self) -> FunctionCall {
@@ -218,7 +219,8 @@ pub trait DbConnectionTrait: ConnectionTrait + DbBackendTrait {
         match backend.lock_table_sql(table, mode) {
             Ok(sql) => {
                 if !sql.is_empty() {
-                    self.execute(Statement::from_string(backend, sql)).await?;
+                    self.execute_raw(Statement::from_string(backend, sql))
+                        .await?;
                 }
             }
             _ => return Err(DbErr::Custom("no implementation".to_owned())),
@@ -290,6 +292,9 @@ pub fn _db_cust_with_values(backend: DbBackend, s: &str) -> String {
                 DbBackend::Sqlite | DbBackend::MySql => {
                     buf.put_u8(b'?');
                 }
+                _ => {
+                    buf.put_u8(b'?');
+                }
             }
             no += 1;
         }
@@ -315,7 +320,7 @@ impl DbBackendTrait for DatabaseConnection {
 impl DbBackendTrait for DatabaseTransaction {
     #[inline]
     fn backend(&self) -> DbBackend {
-        self.get_database_backend()
+        ConnectionTrait::get_database_backend(self)
     }
 }
 
@@ -323,7 +328,6 @@ impl DbBackendTrait for DatabaseTransaction {
 
 pub struct RawSqlBuilder {
     db_backend: DbBackend,
-    builder: Box<dyn QueryBuilder + Send>,
     writer: SqlWriterValues,
 }
 
@@ -332,13 +336,9 @@ impl RawSqlBuilder {
         let writer = match db_backend {
             DbBackend::MySql | DbBackend::Sqlite => SqlWriterValues::new("?", false),
             DbBackend::Postgres => SqlWriterValues::new("$", true),
+            _ => SqlWriterValues::new("?", false),
         };
-        Self {
-            db_backend,
-            // This conversion is safe.
-            builder: unsafe { mem::transmute(db_backend.get_query_builder()) },
-            writer,
-        }
+        Self { db_backend, writer }
     }
 
     pub fn into_statement(self) -> Statement {
@@ -358,7 +358,7 @@ impl RawSqlBuilder {
     where
         M: FromQueryResult,
     {
-        M::find_by_statement(self.into())
+        SelectorRaw::<SelectModel<M>>::from_statement::<M>(self.into())
     }
 
     pub fn into_select_two<M, N>(self) -> SelectorRaw<SelectTwoModel<M, N>>
@@ -367,7 +367,11 @@ impl RawSqlBuilder {
         N: FromQueryResult,
     {
         // TODO: There's no safe methods to transmute Statement into SelectorRaw<SelectTwoModel>.
-        unsafe { mem::transmute(self.into_statement()) }
+        unsafe {
+            mem::transmute(SelectorRaw::<SelectModel<M>>::from_statement::<M>(
+                self.into(),
+            ))
+        }
     }
 
     pub fn into_json(self) -> SelectorRaw<SelectModel<Json>> {
@@ -379,7 +383,11 @@ impl RawSqlBuilder {
         T: sea_orm::TryGetableMany,
         C: sea_orm::Iterable + sea_orm::strum::IntoEnumIterator + Iden,
     {
-        SelectorRaw::<SelectGetableValue<T, C>>::with_columns::<T, C>(self.into())
+        unsafe {
+            mem::transmute(SelectorRaw::<SelectModel<Json>>::from_statement::<Json>(
+                self.into(),
+            ))
+        }
     }
 
     #[inline]
@@ -388,10 +396,18 @@ impl RawSqlBuilder {
     }
 
     pub fn write_expr(&mut self, expr: &SimpleExpr) {
-        self.builder.prepare_simple_expr(expr, &mut self.writer);
+        match self.db_backend {
+            DbBackend::MySql => MysqlQueryBuilder.prepare_expr(expr, &mut self.writer),
+            DbBackend::Postgres => PostgresQueryBuilder.prepare_expr(expr, &mut self.writer),
+            DbBackend::Sqlite => SqliteQueryBuilder.prepare_expr(expr, &mut self.writer),
+            _ => unimplemented!(),
+        }
     }
 
-    pub fn write(&mut self, s: &str) {
+    pub fn write<T>(&mut self, s: T)
+    where
+        T: Into<Cow<'static, str>>,
+    {
         self.write_expr(&Expr::cust(s));
     }
 
@@ -528,7 +544,7 @@ impl SqlHelper {
     where
         M: FromQueryResult,
     {
-        M::find_by_statement(self.into_statement())
+        SelectorRaw::<SelectModel<M>>::from_statement::<M>(self.into_statement())
     }
 
     pub fn into_select_two<M, N>(self) -> SelectorRaw<SelectTwoModel<M, N>>
@@ -537,7 +553,11 @@ impl SqlHelper {
         N: FromQueryResult,
     {
         // TODO: There's no safe methods to transmute Statement into SelectorRaw<SelectTwoModel>.
-        unsafe { mem::transmute(self.into_statement()) }
+        unsafe {
+            mem::transmute(SelectorRaw::<SelectModel<M>>::from_statement::<M>(
+                self.into_statement(),
+            ))
+        }
     }
 
     pub fn into_json(self) -> SelectorRaw<SelectModel<Json>> {
@@ -549,7 +569,11 @@ impl SqlHelper {
         T: sea_orm::TryGetableMany,
         C: sea_orm::Iterable + sea_orm::strum::IntoEnumIterator + Iden,
     {
-        SelectorRaw::<SelectGetableValue<T, C>>::with_columns::<T, C>(self.into())
+        unsafe {
+            mem::transmute(SelectorRaw::<SelectModel<Json>>::from_statement::<Json>(
+                self.into(),
+            ))
+        }
     }
 
     #[inline]
@@ -581,7 +605,7 @@ impl SqlHelper {
                 }
                 ParamIndex::Sql(i) => {
                     if let Value::String(Some(s)) = &value {
-                        self.sql_slices[i as usize] = s.deref().clone().into();
+                        self.sql_slices[i as usize] = s.deref().into();
                     } else {
                         panic!(
                             "Can not set the SQL slice \"{}\" as {:?}",
@@ -625,7 +649,7 @@ impl From<Statement> for SqlHelper {
                         params
                             .raw_entry_mut()
                             .from_key(name.as_str())
-                            .or_insert_with(|| (name.deref().clone().into(), ParamIndices::new()))
+                            .or_insert_with(|| (name.deref().into(), ParamIndices::new()))
                             .1
                             .push(ParamIndex::Value(index as u32));
                     }
@@ -636,8 +660,8 @@ impl From<Statement> for SqlHelper {
         // Get SQL block indices.
         let mut sql_bytes = Bytes::new();
         let mut start = 0;
-        static RE: Lazy<Regex> =
-            Lazy::new(|| Regex::new(r"(?:\{\{|\}\}|\{:[[:word:]]+\})").unwrap());
+        static RE: LazyLock<Regex> =
+            LazyLock::new(|| Regex::new(r"(?:\{\{|\}\}|\{:[[:word:]]+\})").unwrap());
         let re = &*RE;
         while let Some(m) = re.find_at(sql.as_str(), start) {
             if sql_bytes.is_empty() {
@@ -917,14 +941,14 @@ impl OrderByHelper {
                 let id_col_name = self.id_field.split('.').next_back().unwrap();
                 if let Ok(id_col) = E::Column::from_str(id_col_name) {
                     let after_id = model.get(id_col);
-                    if !sea_orm::sea_query::sea_value_to_json_value(&after_id).is_null() {
+                    if !serde_json::Value::is_null(&sea_value_to_json_value(&after_id)) {
                         writer(Expr::col((self.entity.clone(), id_col)).ne(after_id));
                     }
                 } else {
                     for key in <<E as EntityTrait>::PrimaryKey as sea_orm::Iterable>::iter() {
                         let col = key.into_column();
                         let value = model.get(col);
-                        if !sea_orm::sea_query::sea_value_to_json_value(&value).is_null() {
+                        if !serde_json::Value::is_null(&sea_value_to_json_value(&value)) {
                             writer(Expr::col((self.entity.clone(), col)).ne(value));
                         }
                     }
@@ -982,7 +1006,7 @@ impl OrderByHelper {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::db::tests::user::FaRecState;
+    use crate::db::tests::user::RecState;
 
     mod user {
         use super::*;
@@ -1006,7 +1030,7 @@ mod tests {
         )]
         #[sea_orm(rs_type = "i16", db_type = "SmallInteger")]
         #[repr(i16)]
-        pub enum FaRecState {
+        pub enum RecState {
             #[default]
             #[strum(message = "Normal")]
             #[sea_orm(num_value = 1)]
@@ -1028,7 +1052,7 @@ mod tests {
             #[serde(default)]
             pub id: i64,
             #[serde(default)]
-            pub state: FaRecState,
+            pub state: RecState,
             #[serde(default)]
             pub role: i16,
             pub name: Option<String>,
@@ -1136,7 +1160,7 @@ mod tests {
         assert!(user::ActiveModel::from_json(jsn.clone()).is_err());
         jsn.insert_s("state", -1);
         assert!(user::ActiveModel::from_json(jsn.clone()).is_err());
-        jsn.insert_s("state", FaRecState::Deleted);
+        jsn.insert_s("state", RecState::Deleted);
         assert!(user::ActiveModel::from_json(jsn.clone()).is_ok());
 
         let am = user::ActiveModel::from_json(jsn.clone()).unwrap();
@@ -1150,14 +1174,14 @@ mod tests {
         let mut am = <user::ActiveModel as Default>::default();
         jsn.insert_s("state", 8);
         assert!(am.merge_from_json(jsn.clone(), &None::<&str>).is_err());
-        jsn.insert_s("state", FaRecState::Normal);
+        jsn.insert_s("state", RecState::Normal);
         am.merge_from_json(jsn.clone(), &None::<&str>).unwrap();
         println!("{:?}", &am);
 
         let mut m = user::Model::default();
         jsn.insert_s("state", 8);
         assert!(m.merge_from_json(jsn.clone(), &None::<&str>).is_err());
-        jsn.insert_s("state", FaRecState::Normal);
+        jsn.insert_s("state", RecState::Normal);
         m.merge_from_json(jsn.clone(), &None::<&str>).unwrap();
         println!("{:?}", &m);
     }

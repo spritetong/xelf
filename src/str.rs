@@ -100,7 +100,6 @@ impl<T: AsRef<str>> StrXlf for T {
     #[cfg(feature = "ffi")]
     #[inline]
     fn to_cstring(&self) -> CString {
-
         CString::new(self.as_ref()).unwrap()
     }
 
@@ -153,8 +152,8 @@ impl<T: AsRef<str>> StrXlf for T {
     where
         F: Fn(&str, &mut String),
     {
-        use once_cell::sync::Lazy;
         use regex::{Regex, Replacer};
+        use std::sync::LazyLock;
 
         struct _Replacer<F: Fn(&str, &mut String)>(F);
         impl<F: Fn(&str, &mut String)> Replacer for _Replacer<F> {
@@ -168,8 +167,8 @@ impl<T: AsRef<str>> StrXlf for T {
             }
         }
 
-        static RE: Lazy<Regex> =
-            Lazy::new(|| Regex::new(r"(?:\{\{|\}\}|\{:?[[:word:]]+\})").unwrap());
+        static RE: LazyLock<Regex> =
+            LazyLock::new(|| Regex::new(r"(?:\{\{|\}\}|\{:?[[:word:]]+\})").unwrap());
         let replacer = _Replacer(f);
         RE.replace_all(self.as_ref(), replacer)
     }
